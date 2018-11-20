@@ -52,11 +52,11 @@ class Controller():
             
     def get_loss(self):
         self.prime_clusters()
-        losses = [cluster.get_loss() for cluster in self.clusters.values()]
+        loss = [cluster.get_loss() for cluster in self.clusters.values()]
         self.deprime_clusters()
         loss = self.Collapser.collapse(pt.stack([
             self.Collapser.collapse(loss_val)
-            for loss_val in losses
+            for loss_val in loss
             if loss_val is not None
         ]))
         return loss

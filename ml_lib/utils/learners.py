@@ -10,16 +10,20 @@ class Gradient():
         self.learn_rate = learn_rate
         
     def learn(self, loss, coefs):
-        step_size = pt.autograd.grad(loss, coefs, retain_graph = True)
+        gradient = [self._clean_grad(grad) for grad in pt.autograd.grad(loss, coefs, retain_graph = True)]
         with pt.no_grad():
             new_coefs = [
                 coef - (steps * self.learn_rate / coef.size()[0])
-                for coef, steps in zip(coefs, step_size)
+                for coef, steps in zip(coefs, gradient)
             ] if self.scale_features else [
                 coef - (steps * self.learn_rate)
-                for coef, steps in zip(coefs, step_size)
+                for coef, steps in zip(coefs, gradient)
             ]
         return new_coefs
+    
+    def _clean_grad(self, grad):
+        grad[grad != grad] = 0
+        return grad
     
 class Momentum(Gradient):
     def __init__(self, learn_rate = 1, scale_features = False, momentum = 0.8):
@@ -28,11 +32,11 @@ class Momentum(Gradient):
         self.prior_steps = [0, 0]
         
     def learn(self, loss, coefs):
-        step_size = pt.autograd.grad(loss, coefs, retain_graph = True)
+        gradient = [self._clean_grad(grad) for grad in pt.autograd.grad(loss, coefs, retain_graph = True)]
         with pt.no_grad():
             step_size = [
                 (self.momentum * step) + ((1-self.momentum) * prior)
-                for step, prior in zip(step_size, self.prior_steps)
+                for step, prior in zip(gradient, self.prior_steps)
             ]
             self.prior_steps = step_size
             new_coefs = [
@@ -51,7 +55,7 @@ class AdaGrad(Gradient):
         self.sq_grad_integral = None
         
     def learn(self, loss, coefs):
-        gradient = pt.autograd.grad(loss, coefs, retain_graph = True)
+        gradient = [self._clean_grad(grad) for grad in pt.autograd.grad(loss, coefs, retain_graph = True)]
         with pt.no_grad():
             if self.sq_grad_integral is None: self.sq_grad_integral = [pt.zeros(grad.size()) for grad in gradient]
             self.sq_grad_integral = [
@@ -80,7 +84,7 @@ class AdaDelta(Gradient):
         self.sq_window_rate = window_rate
         
     def learn(self, loss, coefs):
-        gradient = pt.autograd.grad(loss, coefs, retain_graph = True)
+        gradient = [self._clean_grad(grad) for grad in pt.autograd.grad(loss, coefs, retain_graph = True)]
         with pt.no_grad():
             if self.sq_grad_integral is None: self.sq_grad_integral = [pt.zeros(grad.size()) for grad in gradient]
             self.sq_grad_integral = [
@@ -112,7 +116,7 @@ class ADAM(Gradient):
         self.sq_window_rate = sq_window_rate
         
     def learn(self, loss, coefs):
-        gradient = pt.autograd.grad(loss, coefs, retain_graph = True)
+        gradient = [self._clean_grad(grad) for grad in pt.autograd.grad(loss, coefs, retain_graph = True)]
         with pt.no_grad():
             if self.grad_integral is None: self.grad_integral = [pt.zeros(grad.size()) for grad in gradient]
             self.grad_integral = [

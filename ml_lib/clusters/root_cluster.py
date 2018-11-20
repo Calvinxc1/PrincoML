@@ -86,7 +86,7 @@ class RootCluster():
     def get_input_tensor(self):
         self.buffers['input_tensor'] = self.buffers.get(
             'input_tensor',
-            pt.cat([link_item['cluster'].get_output_tensor(self) for link_item in self.links['input']], dim = 0)
+            pt.cat([link_item['cluster'].get_output_tensor(self) for link_item in self.links['input']], dim = 1)
         )
         
         return self.buffers['input_tensor']
