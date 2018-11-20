@@ -6,8 +6,8 @@ from ml_lib.utils.learners import Gradient
 
 class DenseCluster(Root):
     def __init__(self, cluster_name, nodes,
-                 weight_init = Normal, weight_params = {'mean': 0, 'stdev': 1},
-                 bias_init = Constant, bias_params = {'constant': 0},
+                 weight_init = Normal, weight_init_params = {'mean': 0, 'stdev': 1},
+                 bias_init = Constant, bias_init_params = {'constant': 0},
                  combiner = Simple, combiner_params = {},
                  activator = Linear, activator_params = {},
                  learner = Gradient, learner_params = {}
@@ -16,8 +16,8 @@ class DenseCluster(Root):
         
         self.nodes = nodes
         self.Inits = {
-            'weights': weight_init(**weight_params),
-            'bias': bias_init(**bias_params)
+            'weights': weight_init(**weight_init_params),
+            'bias': bias_init(**bias_init_params)
         }
         self.Combiner = combiner(**combiner_params)
         self.Activator = activator(**activator_params)

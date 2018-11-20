@@ -12,5 +12,5 @@ class Sigmoid(Linear):
 
 class ReLU(Linear):
     def activate(self, input_tensor):
-        activated_tensor = pt.clamp(input_tensor, 0, np.inf)
+        activated_tensor = pt.max(input_tensor, pt.Tensor([0]))
         return activated_tensor
