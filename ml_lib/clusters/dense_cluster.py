@@ -34,7 +34,7 @@ class DenseCluster(Root):
         
         init_coefs = {
             'weights': self.Inits['weights'].init((self.get_input_count(), self.nodes)),
-            'bias': self.Inits['bias'].init((self.nodes,))
+            'bias': self.Inits['bias'].init((1, self.nodes))
         }
         self.coefs = init_coefs
         

@@ -2,7 +2,7 @@ import numpy as np
 import torch as pt
 
 class Constant():
-    def __init__(self, constant):
+    def __init__(self, constant = 0):
         self.constant = constant
         
     def init(self, tensor_shape):
