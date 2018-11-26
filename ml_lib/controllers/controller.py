@@ -1,15 +1,21 @@
+import numpy as np
 import tqdm
 import torch as pt
+import matplotlib.pyplot as plt
 
 from ml_lib.utils.loss_collapser import Linear
 
 class Controller():
     def __init__(self, use_tqdm = True,
+                 train_split = 'train', valid_split = 'train',
                  collapser = Linear, collapser_params = {}
                 ):
         self.clusters = {}
         self.Collapser = collapser(**collapser_params)
-        self.loss_record = []
+        self.loss_record = {}
+        self.train_split = train_split
+        self.valid_split = valid_split
+        self.best_loss = np.inf
         self.use_tqdm = use_tqdm
         
     def add_cluster(self, cluster):
@@ -38,31 +44,60 @@ class Controller():
         t = tqdm.tnrange(iters) if self.use_tqdm else range(iters)
         for epoc in t:
             self.learning_iter(t)
+        
+    def deinit_clusters(self):
+        for cluster in self.clusters.values(): cluster.deinit_cluster()
             
     def learning_iter(self, t):
-        loss = self.get_loss()
+        losses = self.get_losses()
+        
+        if self.best_loss > losses[self.valid_split]:
+            self.best_loss = losses[self.valid_split]
+            best_iter = True
+        else:
+            best_iter = False
+        
         for cluster in self.clusters.values():
-            cluster.learn(loss)
+            cluster.learn(losses[self.train_split], best_iter = best_iter)
             
-        self.loss_record.append(loss.detach().cpu().numpy())
+        for loss_name, loss_value in losses.items():
+            self.loss_record[loss_name] = self.loss_record.get(loss_name, [])
+            self.loss_record[loss_name].append(loss_value.detach().cpu().numpy())
+        
         if self.use_tqdm:
-            postfix = {'loss': self.loss_record[-1]}
-            if len(self.loss_record) > 1: postfix['loss_delta'] = self.loss_record[-1] - self.loss_record[-2]
+            postfix = {}
+            for key, value in self.loss_record.items():
+                postfix['loss_%s' % key] = value[-1]
             t.set_postfix(postfix)
             
-    def get_loss(self):
+    def get_losses(self):
         self.prime_clusters()
-        loss = [cluster.get_loss() for cluster in self.clusters.values()]
+        
+        losses = {}
+        for cluster in self.clusters.values():
+            cluster_losses = cluster.get_losses()
+            if cluster_losses is not None:
+                for loss_name, loss_val in cluster.get_losses():
+                    losses[loss_name] = losses.get(loss_name, [])
+                    losses[loss_name].append(
+                        self.Collapser.collapse(loss_val)
+                    )
+        
         self.deprime_clusters()
-        loss = self.Collapser.collapse(pt.stack([
-            self.Collapser.collapse(loss_val)
-            for loss_val in loss
-            if loss_val is not None
-        ]))
-        return loss
+        
+        for key in losses.keys():
+            losses[key] = self.Collapser.collapse(pt.stack(losses[key]))
+
+        return losses
             
     def prime_clusters(self, reprime = False):
         for cluster in self.clusters.values(): cluster.prime_cluster(reprime = reprime)
             
     def deprime_clusters(self):
         for cluster in self.clusters.values(): cluster.deprime_cluster()
+            
+    def plot_losses(self, figsize = (16, 10)):
+        plt.figure(figsize = figsize)
+        for key, value in self.loss_record.items():
+            plt.plot(value, label = key)
+        plt.legend()

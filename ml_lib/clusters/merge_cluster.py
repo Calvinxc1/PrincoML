@@ -15,6 +15,9 @@ class MergeCluster(Root):
         super().init_cluster(reinit = reinit)
         self.Merger.init_merger(*self.get_input_count(), reinit = reinit)
         
+    def deinit_cluster(self):
+        self.Merger.deinit_merger()
+        
     def prime_cluster(self, reprime = False, **kwargs):
         super().prime_cluster(reprime = reprime)
         self.Merger.prime_merger(reprime = reprime)
@@ -45,10 +48,10 @@ class MergeCluster(Root):
         output_tensor = self.Merger.merge(input_tensor)
         return output_tensor
         
-    def learn(self, loss, coef_override = None):
+    def learn(self, loss, best_iter = False, coef_override = None):
         coefs = self.coefs if coef_override is None else coef_override
         new_coefs = self.update_coefs(loss, coefs)
-        self.Merger.update_coefs(new_coefs)
+        self.Merger.update_coefs(new_coefs, best_iter = best_iter)
     
     def update_coefs(self, loss, coefs):
         new_coefs = self.Learner.learn(loss, [coef_value for _, coef_value in coefs])

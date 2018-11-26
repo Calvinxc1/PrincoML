@@ -1,4 +1,5 @@
 import torch as pt
+from copy import deepcopy as copy
 
 from ml_lib.utils.inits import Constant
 
@@ -11,6 +12,11 @@ class MergerRoot():
     def init_merger(self, col_count, input_count, reinit = False):
         if self.init & (not reinit):
             raise Exception('Recursor is initialized and reinit is False')
+            
+        self.best_coefs = copy(self.coefs)
+        
+    def deinit_merger(self):
+        self.coefs = copy(self.best_coefs)
     
     def prime_merger(self, reprime = False):
         if self.primed & (not reprime):
@@ -31,7 +37,11 @@ class MergerRoot():
         coefs = [(coef_label, coef_value) for coef_label, coef_value in self.coefs.items()]
         return coefs
     
-    def update_coefs(self, new_coefs):
+    def update_coefs(self, new_coefs, best_iter = False):
+        if best_iter:
+            with pt.no_grad():
+                self.best_coefs = copy(self.coefs)
+        
         for coef_label, coef_value in new_coefs:
             self.coefs[coef_label] = coef_value
 
@@ -53,8 +63,8 @@ class Smooth(MergerRoot):
         self.Init = init(**init_params)
         
     def init_merger(self, col_count, input_count, reinit = False):
-        super().init_merger(col_count, input_count, reinit = reinit)
         self.coefs['smoother'] = self.Init.init((1, col_count, input_count))
+        super().init_merger(col_count, input_count, reinit = reinit)
         
     def merge(self, input_tensor):
         input_weights = pt.exp(self.coefs['smoother'])

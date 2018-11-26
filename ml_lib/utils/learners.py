@@ -1,4 +1,3 @@
-import numpy as np
 import torch as pt
 
 class Gradient():
@@ -116,7 +115,8 @@ class ADAM(Gradient):
         self.sq_window_rate = sq_window_rate
         
     def learn(self, loss, coefs):
-        gradient = [self._clean_grad(grad) for grad in pt.autograd.grad(loss, coefs, retain_graph = True)]
+        gradient = pt.autograd.grad(loss, coefs, retain_graph = True)
+        gradient = [self._clean_grad(grad) for grad in gradient]
         with pt.no_grad():
             if self.grad_integral is None: self.grad_integral = [pt.zeros(grad.size()) for grad in gradient]
             self.grad_integral = [

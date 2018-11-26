@@ -1,3 +1,6 @@
+from copy import deepcopy as copy
+import torch as pt
+
 from ml_lib.clusters.root_cluster import RootCluster as Root
 from ml_lib.utils.inits import Constant, Normal
 from ml_lib.utils.combiners import Simple
@@ -37,6 +40,13 @@ class DenseCluster(Root):
             'bias': self.Inits['bias'].init((1, self.nodes))
         }
         self.coefs = init_coefs
+        self.best_coefs = copy(self.coefs)
+        
+    def deinit_cluster(self):
+        self._deinit_coefs()
+        
+    def _deinit_coefs(self):
+        self.coefs = copy(self.best_coefs)
         
     def prime_cluster(self, reprime = False, **kwargs):
         super().prime_cluster(reprime = reprime)
@@ -57,7 +67,11 @@ class DenseCluster(Root):
         activated_tensor = self.Activator.activate(combined_tensor)
         return activated_tensor
     
-    def learn(self, loss, coef_override = None):
+    def learn(self, loss, best_iter = False, coef_override = None):
+        if best_iter:
+            with pt.no_grad():
+                self.best_coefs = copy(self.coefs)
+        
         coefs = (self.coefs['weights'], self.coefs['bias']) if coef_override is None else coef_override
         self.update_coefs(loss, coefs)
     

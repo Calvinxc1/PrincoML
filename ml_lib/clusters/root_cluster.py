@@ -51,6 +51,10 @@ class RootCluster():
         
         self.init = True
         
+    def deinit_cluster(self):
+        ## Placeholder, define in child
+        pass
+        
     def prime_cluster(self, reprime = False, **kwargs):
         ## Placeholder method, define in child classes
         if not self.init:
@@ -91,10 +95,10 @@ class RootCluster():
         
         return self.buffers['input_tensor']
     
-    def get_loss(self):
+    def get_losses(self):
         ## Placeholder method, define in child classes
         return None
     
-    def learn(self, loss, **kwargs):
+    def learn(self, loss, best_iter = False, **kwargs):
         ## Placeholder method, define in child classes
         pass

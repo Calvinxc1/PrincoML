@@ -2,18 +2,18 @@ import numpy as np
 import torch as pt
 
 from ml_lib.clusters.root_cluster import RootCluster as Root
-from ml_lib.utils.samplers import All
+from ml_lib.utils.splitters import All
 from ml_lib.utils.losses import SqErr
 
 class DataCluster(Root):
     def __init__(self, cluster_name, data_frame,
-                 sampler = All, sampler_params = {},
+                 splitter = All, splitter_params = {},
                  loss = SqErr, loss_params = {}
                 ):
         super().__init__(cluster_name)
         self.data = None
         self.add_data(data_frame)
-        self.Sampler = sampler(self.data['index'].size, **sampler_params)
+        self.Splitter = splitter(self.data['index'].size, **splitter_params)
         self.Loss = loss(**loss_params)
         
     def add_data(self, data_frame, overwrite = False):
@@ -49,11 +49,12 @@ class DataCluster(Root):
         output_data = self.data['tensor'][:, link_cols]
         return output_data
     
-    def get_loss(self):
+    def get_losses(self, sample_type = 'train'):
         predict_tensor = self.get_input_tensor()
         target_tensor = self.get_target_tensor()
-        loss_vals = self.Loss.loss(predict_tensor, target_tensor)
-        return loss_vals
+        splits = self.Splitter.splits
+        loss_tensors = self.Loss.losses(predict_tensor, target_tensor, splits)
+        return loss_tensors
     
     def get_target_tensor(self):
         col_idx = []

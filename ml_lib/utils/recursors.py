@@ -1,3 +1,4 @@
+from copy import deepcopy as copy
 import torch as pt
 
 class RecursorRoot():
@@ -12,6 +13,11 @@ class RecursorRoot():
     def init_recurse(self, col_count, reinit = False):
         if self.init & (not reinit):
             raise Exception('Recursor is initialized and reinit is False')
+            
+        self.best_coefs = copy(self.coefs)
+            
+    def deinit_recurse(self):
+        self.coefs = copy(self.best_coefs)
     
     @property
     def col_mod(self):
@@ -42,7 +48,11 @@ class RecursorRoot():
         coefs = [(coef_label, coef_value) for coef_label, coef_value in self.coefs.items()]
         return coefs
     
-    def update_coefs(self, new_coefs):
+    def update_coefs(self, new_coefs, best_iter = False):
+        if best_iter:
+            with pt.no_grad():
+                self.best_coefs = copy(self.coefs)
+        
         for coef_label, coef_value in new_coefs:
             self.coefs[coef_label] = coef_value
             
@@ -56,9 +66,9 @@ class SingleSmooth(RecursorRoot):
         super().__init__(return_types = return_types, return_horizons = return_horizons)
     
     def init_recurse(self, col_count, reinit = False):
-        super().init_recurse(col_count, reinit = reinit)
         self.coefs['level_balance'] = pt.zeros(col_count)
         self.coefs['level_seed'] = pt.zeros(col_count)
+        super().init_recurse(col_count, reinit = reinit)
         
     def prime_recurse(self, reprime = False):
         super().prime_recurse(reprime = reprime)
@@ -66,7 +76,11 @@ class SingleSmooth(RecursorRoot):
         self.buffer['level'] = [self.coefs['level_seed']]
     
     def recurse_row(self, row_tensor):
-        smooth_level = self.buffer['level'][-1] + (self.buffer['level_balance'] * (row_tensor - self.buffer['level'][-1]))
+        smooth_level = (
+            (1 - self.buffer['level_balance']) * row_tensor
+        ) + (
+            self.buffer['level_balance'] * self.buffer['level'][-1]
+        )
         self.buffer['level'].append(smooth_level)
     
     def build_recurse_tensor(self):
@@ -81,12 +95,13 @@ class DoubleSmooth(RecursorRoot):
         super().__init__(return_types = return_types, return_horizons = return_horizons)
     
     def init_recurse(self, col_count, reinit = False):
-        super().init_recurse(col_count, reinit = reinit)
         self.coefs['level_balance'] = pt.zeros(col_count)
         self.coefs['trend_balance'] = pt.zeros(col_count)
         
         self.coefs['level_seed'] = pt.zeros(col_count)
         self.coefs['trend_seed'] = pt.zeros(col_count)
+        
+        super().init_recurse(col_count, reinit = reinit)
         
     def prime_recurse(self, reprime = False):
         super().prime_recurse(reprime = reprime)
@@ -97,11 +112,16 @@ class DoubleSmooth(RecursorRoot):
         self.buffer['trend'] = [self.coefs['trend_seed']]
         
     def recurse_row(self, row_tensor):
-        smooth_level = self.buffer['level'][-1] + self.buffer['trend'][-1] + (
-            self.buffer['level_balance'] * (row_tensor - self.buffer['level'][-1] - self.buffer['trend'][-1])
+        smooth_level = (
+            (1 - self.buffer['level_balance']) * row_tensor
+        ) + (
+            self.buffer['level_balance'] * (self.buffer['level'][-1] - self.buffer['trend'][-1])
         )
-        smooth_trend = self.buffer['trend'][-1] + (
-            self.buffer['trend_balance'] * (smooth_level - self.buffer['level'][-1] - self.buffer['trend'][-1])
+
+        smooth_trend = (
+            (1 - self.buffer['trend_balance']) * (smooth_level - self.buffer['level_balance'])
+        ) + (
+            self.buffer['trend_balance'] * self.buffer['trend'][-1]
         )
         
         self.buffer['level'].append(smooth_level)
