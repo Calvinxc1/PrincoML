@@ -26,11 +26,12 @@ class RecurseCluster(Root):
         self.Recursor.deprime_recurse()
         
     def get_output_count(self, req_cluster):
-        return self.get_input_count()
+        output_count = self.get_input_count() * self.Recursor.col_mod
+        return output_count
         
     def get_output_tensor(self, req_cluster):
         input_tensor = self.get_input_tensor()
-        output_tensor = pt.stack([self.Recursor.recurse(row) for row in input_tensor])
+        output_tensor = self.Recursor.recurse(input_tensor)
         return output_tensor
     
     def learn(self, loss, coef_override = None):
