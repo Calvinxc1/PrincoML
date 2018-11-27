@@ -16,6 +16,7 @@ class Controller():
         self.train_split = train_split
         self.valid_split = valid_split
         self.best_loss = np.inf
+        self.best_iter = None
         self.use_tqdm = use_tqdm
         
     def add_cluster(self, cluster):
@@ -43,16 +44,17 @@ class Controller():
     def train_model(self, iters):
         t = tqdm.tnrange(iters) if self.use_tqdm else range(iters)
         for epoc in t:
-            self.learning_iter(t)
+            self.learning_iter(epoc, t)
         
     def deinit_clusters(self):
         for cluster in self.clusters.values(): cluster.deinit_cluster()
             
-    def learning_iter(self, t):
+    def learning_iter(self, epoc, t):
         losses = self.get_losses()
         
         if self.best_loss > losses[self.valid_split]:
             self.best_loss = losses[self.valid_split]
+            self.best_iter = epoc
             best_iter = True
         else:
             best_iter = False
@@ -65,7 +67,7 @@ class Controller():
             self.loss_record[loss_name].append(loss_value.detach().cpu().numpy())
         
         if self.use_tqdm:
-            postfix = {}
+            postfix = {'best_iter': self.best_iter}
             for key, value in self.loss_record.items():
                 postfix['loss_%s' % key] = value[-1]
             t.set_postfix(postfix)
@@ -98,6 +100,26 @@ class Controller():
             
     def plot_losses(self, figsize = (16, 10)):
         plt.figure(figsize = figsize)
+        
         for key, value in self.loss_record.items():
             plt.plot(value, label = key)
+            
+        plt.axvline(x = self.best_iter, label = 'best validation loss', color = 'red')
+        
         plt.legend()
+        
+    def get_outputs(self, data_override = None):
+        if data_override is not None:
+            for cluster_name, cluster in self.clusters.items():
+                cluster.prime_cluster(data_override = data_override.get(cluster_name, None))
+        else:
+            self.prime_clusters()
+        
+        outputs = {}
+        for cluster_name, cluster in self.clusters.items():
+            if type(cluster).__name__ != 'DataCluster':
+                outputs[cluster_name] = cluster.get_output_tensor(self).detach().cpu().numpy()
+        
+        self.deprime_clusters()
+        
+        return outputs

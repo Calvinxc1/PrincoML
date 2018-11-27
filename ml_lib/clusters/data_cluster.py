@@ -12,6 +12,7 @@ class DataCluster(Root):
                 ):
         super().__init__(cluster_name)
         self.data = None
+        self.predict_data = None
         self.add_data(data_frame)
         self.Splitter = splitter(self.data['index'].size, **splitter_params)
         self.Loss = loss(**loss_params)
@@ -20,11 +21,16 @@ class DataCluster(Root):
         if (self.data is not None) & (not overwrite):
             raise Exception('%s: Attempting to overwrite existing data_frame when overwrite is False' % self.name)
             
-        self.data = {
+        self.data = self.convert_frame(data_frame)
+        
+    def convert_frame(self, data_frame):
+        data_dict = {
             'tensor': pt.from_numpy(data_frame.values).type(pt.Tensor),
             'columns': data_frame.columns,
             'index': data_frame.index
         }
+        
+        return data_dict
         
     def add_link(self, cluster, link_type, data_cols = None, **kwargs):
         col_idx = np.array([self.data['columns'].get_loc(col) for col in data_cols])
@@ -39,6 +45,14 @@ class DataCluster(Root):
             
         link_cols = self.links[link_type][link_idx]['params']['columns']
         return link_cols
+    
+    def prime_cluster(self, reprime = False, data_override = None):
+        self.data_override = None if data_override is None else self.convert_frame(data_override)
+        super().prime_cluster(reprime = reprime)
+        
+    def deprime_cluster(self):
+        self.data_override = None
+        super().deprime_cluster()
         
     def get_output_count(self, req_cluster):
         output_count = len(self.get_link_cols(req_cluster.name, 'output'))
@@ -46,7 +60,7 @@ class DataCluster(Root):
     
     def get_output_tensor(self, req_cluster):
         link_cols = self.get_link_cols(req_cluster.name, 'output')
-        output_data = self.data['tensor'][:, link_cols]
+        output_data = (self.data if self.data_override is None else self.data_override)['tensor'][:, link_cols]
         return output_data
     
     def get_losses(self, sample_type = 'train'):

@@ -39,7 +39,7 @@ class Validation(All):
         )
     
 class CrossValid(All):
-    def update_splits(self, index_len, splits):
+    def update_splits(self, index_len, splits, valid_seed = 0):
         split_size = int(index_len * splits) + 1
         split_index = np.split(
             np.random.permutation(np.arange(index_len)),
@@ -51,22 +51,16 @@ class CrossValid(All):
             'holdout': split_index[-1]
         }
         
-        self.valid_split = 0
+        self.valid_split = valid_seed
         
-    def sample(self, sample_type, increment = False):
-        if sample_type == 'train':
-            sample = np.concatenate([
-                self.splits['cross_valid'][split]
-                for split in range(len(self.splits['cross_valid']))
-                if split != self.valid_split
-            ])
-        elif sample_type == 'valid':
-            sample = self.splits['cross_valid'][self.valid_split]
-        elif sample_type == 'holdout':
-            sample = self.splits['holdout']
-        else:
-            raise Exception('%s is an invalid sample type' % sample_type)
-        
-        if increment: self.valid_split = (self.valid_split + 1) % self.splits['cross_valid']
-        
-        return sample
+    @property
+    def splits(self):
+        splits = [
+            ('train', self.splits['cross_valid'][:self.valid_split] + self.splits['cross_valid'][self.valid_split+1:]),
+            ('valid', self.splits['cross_valid'][self.valid_split]),
+            ('holdout', self.splits['holdout'])
+        ]
+        return splits
+    
+    def increment():
+        self.valid_split = (self.valid_split + 1) % len(self.splits['cross_valid'])
