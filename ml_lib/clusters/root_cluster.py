@@ -53,6 +53,7 @@ class RootCluster():
         
     def deinit_cluster(self):
         ## Placeholder, define in child
+        self.init = False
         pass
         
     def prime_cluster(self, reprime = False, **kwargs):
