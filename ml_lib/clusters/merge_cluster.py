@@ -17,6 +17,7 @@ class MergeCluster(Root):
         
     def deinit_cluster(self):
         self.Merger.deinit_merger()
+        super().deinit_cluster()
         
     def prime_cluster(self, reprime = False, **kwargs):
         super().prime_cluster(reprime = reprime)

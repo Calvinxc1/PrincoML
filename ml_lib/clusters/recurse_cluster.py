@@ -19,6 +19,7 @@ class RecurseCluster(Root):
         
     def deinit_cluster(self):
         self.Recursor.deinit_recurse()
+        super().deinit_cluster()
         
     def prime_cluster(self, reprime = False, **kwargs):
         super().prime_cluster(reprime = reprime)

@@ -44,6 +44,7 @@ class DenseCluster(Root):
         
     def deinit_cluster(self):
         self._deinit_coefs()
+        super().deinit_cluster()
         
     def _deinit_coefs(self):
         self.coefs = copy(self.best_coefs)
