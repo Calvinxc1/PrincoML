@@ -103,3 +103,6 @@ class RootCluster():
     def learn(self, loss, best_iter = False, **kwargs):
         ## Placeholder method, define in child classes
         pass
+    
+    def get_coefs(self):
+        return None

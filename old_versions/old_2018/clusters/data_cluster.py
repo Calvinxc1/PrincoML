@@ -8,13 +8,15 @@ from ml_lib.utils.losses import SqErr
 class DataCluster(Root):
     def __init__(self, cluster_name, data_frame,
                  splitter = All, splitter_params = {},
-                 loss = SqErr, loss_params = {}
+                 loss = SqErr, loss_params = {},
+                 regularizer = None, regularizer_params = {}
                 ):
         super().__init__(cluster_name)
         self.data = None
         self.predict_data = None
         self.add_data(data_frame)
         self.Splitter = splitter(self.data['index'].size, **splitter_params)
+        self.Regularizer = None if regularizer is None else regularizer(**regularizer_params)
         self.Loss = loss(**loss_params)
         
     def add_data(self, data_frame, overwrite = False):

@@ -80,3 +80,6 @@ class DenseCluster(Root):
         new_coefs = self.Learner.learn(loss, coefs)
         self.coefs['weights'] = new_coefs[0]
         self.coefs['bias'] = new_coefs[1]
+        
+    def get_coefs(self):
+        return self.coefs
