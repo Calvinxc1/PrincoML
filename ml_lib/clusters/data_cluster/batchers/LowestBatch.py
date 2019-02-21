@@ -2,17 +2,15 @@ import numpy as np
 
 from ml_lib.clusters.data_cluster.batchers.RootBatch import RootBatch as Root
 
-class FlatBatch(Root):
+class LowestBatch(Root):
     defaults = {
         **Root.defaults,
-        'proportion': 1.0,
         'replace': False
     }
     
     def __init__(self, path_name = None, verbose = None,
                  proportion = None, replace = None
                 ):
-        self.prop = self.defaults['proportion'] if proportion is None else proportion
         self.replace = self.defaults['replace'] if replace is None else replace
         
         super().__init__(path_name = path_name, verbose = verbose)
@@ -21,9 +19,8 @@ class FlatBatch(Root):
         batch_splits = []
         
         for key, value in obs_splits.items():
-            working_split = np.concatenate(value)
-            batch_count = int(working_split.size * self.prop) if type(self.prop) is float else self.prop
-            overall_batch = np.random.choice(working_split, size = batch_count, replace = self.replace)
+            lowest_size = min([idx_list.size for idx_list in value])
+            overall_batch = np.concatenate([np.random.choice(idx_list, lowest_size, replace = False) for idx_list in value])
             
             batch_splits.append({
                 'name': key,

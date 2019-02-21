@@ -1,13 +1,19 @@
+import numpy as np
 import torch as pt
+import tqdm
+import matplotlib.pyplot as plt
 
 from ml_lib.utils.loss_combiners.MeanLossCombine import MeanLossCombine
 
 class Controller:
     defaults = {
-        'loss_combiner': MeanLossCombine, 'loss_combiner_kwargs': {}
+        'train_split': 'train',
+        'use_tqdm': True,
+        'loss_combiner': MeanLossCombine, 'loss_combiner_kwargs': {},
     }
     
     def __init__(self, control_name,
+                 train_split = None, use_tqdm = None,
                  loss_combiner = None, loss_combiner_kwargs = {}
                 ):
         loss_combiner = self.defaults['loss_combiner'] if loss_combiner is None else loss_combiner
@@ -15,6 +21,9 @@ class Controller:
         
         self.name = control_name
         self.clusters = {}
+        self.train_split = self.defaults['train_split'] if train_split is None else train_split
+        self.use_tqdm = self.defaults['use_tqdm'] if use_tqdm is None else use_tqdm
+        self.enabled = False
         
         self.LossCombiner = loss_combiner(self.name, **loss_combiner_kwargs)
         
@@ -42,24 +51,52 @@ class Controller:
             
     def enable_network(self):
         for cluster in self.clusters.values(): cluster.enable()
+        self.loss_record = {}
             
     def build_batch_splits(self):
         for cluster in self.clusters.values(): cluster.build_batch_splits()
-    
+
     @property
     def network_loss(self):
-        cluster_losses = []
+        network_loss = {}
         for cluster in self.clusters.values():
             loss_val = cluster.loss
             if loss_val is None: continue
-            cluster_losses.append(loss_val)
-        cluster_losses = pt.stack(cluster_losses)
+            for key, value in loss_val.items():
+                if key not in network_loss.keys():
+                    network_loss[key] = []
+                network_loss[key].append(value)
         
-        network_loss = self.LossCombiner.loss_combine(cluster_losses)
+        for key in network_loss.keys():
+            network_loss[key] = self.LossCombiner.loss_combine(pt.stack(network_loss[key]))
+        
         return network_loss
     
     def clear_buffers(self):
         for cluster in self.clusters.values(): cluster.clear_buffer()
             
-    def network_learn(self, network_loss):
+    def network_learn(self):
+        network_loss = self.network_loss[self.train_split]
         for cluster in self.clusters.values(): cluster.learn(network_loss)
+            
+    def train_model(self, epocs):
+        t = tqdm.tnrange(epocs) if self.use_tqdm else range(epocs)
+        for epoc in t:
+            self.build_batch_splits()
+            
+            postfix = {}
+            for key, value in self.network_loss.items():
+                if key not in self.loss_record: self.loss_record[key] = []
+                self.loss_record[key].append(np.asscalar(value.detach().cpu().numpy()))
+                postfix[key] = self.loss_record[key][-1]
+            
+            if self.use_tqdm: t.set_postfix(postfix)
+            
+            self.network_learn()
+            self.clear_buffers()
+            
+    def plot_losses(self, figsize = (16, 10)):
+        plt.figure(figsize = figsize)
+        for key, value in self.loss_record.items():
+            plt.plot(value, label = key)
+        plt.legend()

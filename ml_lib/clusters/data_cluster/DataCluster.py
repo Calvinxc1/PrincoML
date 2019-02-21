@@ -2,6 +2,7 @@ import torch as pt
 import numpy as np
 
 from ml_lib.clusters.root_cluster.RootCluster import RootCluster as Root
+from ml_lib.clusters.data_cluster.normalizers.NormalNorm import NormalNorm
 from ml_lib.clusters.data_cluster.splitters.BaseSplit import BaseSplit
 from ml_lib.clusters.data_cluster.batchers.FlatBatch import FlatBatch
 from ml_lib.clusters.data_cluster.losses.SqErrLoss import SqErrLoss
@@ -10,36 +11,34 @@ from ml_lib.utils.loss_combiners.MeanLossCombine import MeanLossCombine
 class DataCluster(Root):
     defaults = {
         **Root.defaults,
-        'splitter': BaseSplit, 'splitter_kwargs': {'ratios': {'train': 0.8, 'holdout': 0.2}}, 'train_split': 'train',
-        'batcher': FlatBatch, 'batcher_kwargs': {},
-        'loss': SqErrLoss, 'loss_kwargs': {'mean': True, 'sqrt': True},
-        'loss_combiner': MeanLossCombine, 'loss_combiner_kwargs': {}
+        'normalizer': NormalNorm,
+        'splitter': BaseSplit,
+        'batcher': FlatBatch,
+        'loss': SqErrLoss,
+        'loss_combiner': MeanLossCombine,
     }
     
     def __init__(self, cluster_name, data_frame, path_name = None, verbose = None,
-                 splitter = None, splitter_kwargs = {}, train_split = None,
+                 normalizer = None, normalizer_kwargs = {},
+                 splitter = None, splitter_kwargs = {},
                  batcher = None, batcher_kwargs = {},
                  loss = None, loss_kwargs = {},
                  loss_combiner = None, loss_combiner_kwargs = {}
                 ):
+        normalizer = self.defaults['normalizer'] if normalizer is None else normalizer
         splitter = self.defaults['splitter'] if splitter is None else splitter
-        splitter_kwargs = {**self.defaults['splitter_kwargs'], **splitter_kwargs}
-        self.train_split = self.defaults['train_split'] if train_split is None else train_split
-        
         batcher = self.defaults['batcher'] if batcher is None else batcher
-        batcher_kwargs = {**self.defaults['batcher_kwargs'], **batcher_kwargs}
-        
         loss = self.defaults['loss'] if loss is None else loss
-        loss_kwargs = {**self.defaults['loss_kwargs'], **loss_kwargs}
-        
         loss_combiner = self.defaults['loss_combiner'] if loss_combiner is None else loss_combiner
-        loss_combiner_kwargs = {**self.defaults['loss_combiner_kwargs'], **loss_combiner_kwargs}
         
         super().__init__(cluster_name, path_name = path_name, verbose = verbose)
         self.data = None
+        
+        self.Normalizer = normalizer(path_name = '%s:%s' % (self.path_name, self.name), **normalizer_kwargs)
         self.add_data(data_frame)
         
-        self.Splitter = splitter(self.data['index'], path_name = '%s:%s' % (self.path_name, self.name), **splitter_kwargs)
+        
+        self.Splitter = splitter(self.data['tensor'], path_name = '%s:%s' % (self.path_name, self.name), **splitter_kwargs)
         self.Batcher = batcher(path_name = '%s:%s' % (self.path_name, self.name), **batcher_kwargs)
         self.Loss = loss(path_name = '%s:%s' % (self.path_name, self.name), **loss_kwargs)
         self.LossCombiner = loss_combiner(path_name = '%s:%s' % (self.path_name, self.name), **loss_combiner_kwargs)
@@ -66,7 +65,8 @@ class DataCluster(Root):
         if (self.data is not None) & (not overwrite):
             raise Exception('%s: Attempting to overwrite existing data_frame when overwrite is False' % self.name)
             
-        self.data = convert_frame(data_frame)
+        normed_data = self.Normalizer.norm_data(data_frame)
+        self.data = convert_frame(normed_data)
         
         self._v_msg('Data frame added, overwrite %s.' % overwrite)
         
@@ -88,15 +88,18 @@ class DataCluster(Root):
         
     def get_output_tensor(self, req_cluster_name):
         link_cols = self._link_cols(req_cluster_name, 'output')
-        tensor_idx = self.get_tensor_idx(self.batch_splits)
-        output_tensor = self.data['tensor'][tensor_idx, :][:, link_cols]
+        output_tensor = self.data['tensor'][self.batch_tensor_idx, :][:, link_cols]
         
         self._v_msg('Output tensor shape %s provided.' % (tuple([dim for dim in output_tensor.size()]),))
         
         return output_tensor
     
-    def get_tensor_idx(self, batch_splits):
-        batch_tensor_idx = np.concatenate(list(batch_splits.values()))
+    @property
+    def batch_tensor_idx(self):
+        batch_tensor_idx = np.concatenate([
+            batch['index']
+            for batch in self.batch_splits
+        ])
         return batch_tensor_idx
     
     @property
@@ -109,12 +112,19 @@ class DataCluster(Root):
     def loss(self):
         if self.buffer is None:
             loss_vals = {}
-            for batch_name, batch_idx in self.batch_splits.items():
-                predict_tensor = self.input_tensor[batch_idx, :]
-                target_tensor = self.target_tensor[batch_idx, :]
-                loss_tensor = self.Loss.loss(target_tensor, predict_tensor)
+            run_idx = 0
+            predict_tensor = self.input_tensor
+            target_tensor = self.target_tensor
+            for batch_split in self.batch_splits:
+                self._v_msg('Building loss for %s.' % batch_split['name'])
+                loss_tensor = self.Loss.loss(
+                    target_tensor[batch_split['index'], :],
+                    predict_tensor[run_idx:run_idx + batch_split['index'].size, :]
+                )
                 loss_val = self.LossCombiner.loss_combine(loss_tensor)
-                loss_vals[batch_name] = loss_val.clone()
+                loss_vals[batch_split['name']] = loss_val
+                
+                run_idx += batch_split['index'].size
             
             self.buffer = loss_vals
         else:

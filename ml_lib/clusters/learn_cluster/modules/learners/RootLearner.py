@@ -3,12 +3,16 @@ from datetime import datetime as dt
 class RootLearner:
     defaults = {
         'path_name': 'N/A',
-        'verbose': False
+        'verbose': False,
+        'learn_rate': 1e-3,
+        'coef_scale': True
     }
     
-    def __init__(self, path_name = None, verbose = None):
+    def __init__(self, path_name = None, verbose = None, learn_rate = None, coef_scale = None):
         self.path_name = self.defaults['path_name'] if path_name is None else path_name
         self.verbose = self.defaults['verbose'] if verbose is None else verbose
+        self.learn_rate = self.defaults['learn_rate'] if learn_rate is None else learn_rate
+        self.coef_scale = self.defaults['coef_scale'] if coef_scale is None else coef_scale
         
     def _v_msg(self, message):
         if self.verbose: print('%s | %s:learner (%s) - %s' % (

@@ -21,6 +21,9 @@ class LearnCluster(Root):
         super().enable(override = override)
         self.Module.enable(self.input_count, override = override)
         
+    def get_output_count(self, req_cluster_name):
+        return self.Module.output_count
+        
     def get_output_tensor(self, req_cluster_name):
         if self.enable is False: raise Exception('Cluster is not enabled!')
             
