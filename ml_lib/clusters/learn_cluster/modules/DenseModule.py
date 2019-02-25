@@ -12,6 +12,7 @@ class DenseModule(Root):
     name = 'dense_module'
     defaults = {
         **Root.defaults,
+        'bias_active': True,
         'bias_init': FlatInit,
         'weight_init': NormalInit,
         'combiner': SimpleCombine,
@@ -22,6 +23,7 @@ class DenseModule(Root):
     
     def __init__(self, path_name = None, verbose = None,
                  nodes = None, nesterov = None,
+                 bias_active = None,
                  bias_init = None, bias_init_kwargs = {},
                  weight_init = None, weight_init_kwargs = {},
                  combiner = None, combiner_kwargs = {},
@@ -42,12 +44,13 @@ class DenseModule(Root):
         
         self.nodes = nodes
         self.nesterov = self.defaults['nesterov'] if nesterov is None else nesterov
+        self.bias_active = self.defaults['bias_active'] if bias_active is None else bias_active
         
         self.Inits = {
             'bias': bias_init(path_name = '%s:%s' % (self.path_name, self.name), **bias_init_kwargs),
             'weight': weight_init(path_name = '%s:%s' % (self.path_name, self.name), **weight_init_kwargs)
         }
-        self.Combiner = combiner(path_name = '%s:%s' % (self.path_name, self.name), **combiner_kwargs)
+        self.Combiner = combiner(path_name = '%s:%s' % (self.path_name, self.name), bias_active = self.bias_active, **combiner_kwargs)
         self.Activator = activator(path_name = '%s:%s' % (self.path_name, self.name), **activator_kwargs)
         self.Learner = learner(path_name = '%s:%s' % (self.path_name, self.name), **learner_kwargs)
     
@@ -59,7 +62,7 @@ class DenseModule(Root):
         self.coefs = pt.cat((
             self.Inits['bias'].init((1, self.nodes)),
             self.Inits['weight'].init((input_count, self.nodes))
-        ), dim = 0)
+        ), dim = 0) if self.bias_active else self.Inits['weight'].init((input_count, self.nodes))
         
         if self.nesterov: self.prior_coefs = copy(self.coefs)
         
@@ -80,7 +83,7 @@ class DenseModule(Root):
             if self.nesterov:
                 self.coefs = self.prior_coefs - learn_step
                 self.prior_coefs = copy(self.coefs)
-
+            
             self.coefs = self.coefs - learn_step
         
         self.coefs.requires_grad = True

@@ -8,10 +8,10 @@ class LearnCluster(Root):
     }
     
     def __init__(self, cluster_name, path_name = None, verbose = None,
-                 module = None, module_kwargs = {}
+                 module = None, module_kwargs = None
                 ):
         module = self.defaults['module'] if module is None else module
-        module_kwargs = {**self.defaults['module_kwargs'], **module_kwargs}
+        module_kwargs = self.defaults['module_kwargs'] if module_kwargs is None else module_kwargs
         
         super().__init__(cluster_name, path_name = path_name, verbose = verbose)
         

@@ -37,7 +37,6 @@ class DataCluster(Root):
         self.Normalizer = normalizer(path_name = '%s:%s' % (self.path_name, self.name), **normalizer_kwargs)
         self.add_data(data_frame)
         
-        
         self.Splitter = splitter(self.data['tensor'], path_name = '%s:%s' % (self.path_name, self.name), **splitter_kwargs)
         self.Batcher = batcher(path_name = '%s:%s' % (self.path_name, self.name), **batcher_kwargs)
         self.Loss = loss(path_name = '%s:%s' % (self.path_name, self.name), **loss_kwargs)
