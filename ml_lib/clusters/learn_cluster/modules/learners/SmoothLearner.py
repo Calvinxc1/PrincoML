@@ -6,13 +6,13 @@ from ml_lib.clusters.learn_cluster.modules.learners.RootLearner import RootLearn
 class SmoothLearner(Root):
     defaults = {
         **Root.defaults,
-        'alpha': 0.1,
-        'beta': 0.001,
+        'alpha': 0.2,
+        'beta': 0.1,
         'clamper': 1e-16
     }
     
     def __init__(self, path_name = None, verbose = None, learn_rate = None, coef_scale = None,
-                 alpha = None, beta = None, clamper = None
+                 alpha = None, beta = None, clamper = None, scalers = None
                 ):
         super().__init__(path_name = path_name, verbose = verbose, learn_rate = learn_rate, coef_scale = coef_scale)
         self.alpha = self.defaults['alpha'] if alpha is None else alpha
@@ -29,14 +29,7 @@ class SmoothLearner(Root):
             self.gradient = (self.alpha * gradient) + ((1 - self.alpha) * self.gradient)
             self.grad_sq = (self.beta * (gradient ** 2)) + ((1 - self.beta) * self.grad_sq)
             
-            alpha_scaler = 1 - (self.alpha ** self.iter_count)
-            beta_scaler = 1 - (self.beta ** self.iter_count)
-            
-            learn_step = (
-                self.gradient / alpha_scaler
-            ) / pt.clamp(
-                pt.sqrt(self.grad_sq / beta_scaler),
-            self.clamper, np.inf)
+            learn_step = self.gradient / pt.clamp(pt.sqrt(self.grad_sq), self.clamper, np.inf)
             
             learn_step *= self.learn_rate
             if self.coef_scale: learn_step /= coefs.size()[0]

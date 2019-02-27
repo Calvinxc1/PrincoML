@@ -38,3 +38,6 @@ class LearnCluster(Root):
     
     def learn(self, loss):
         self.Module.learn(loss)
+        
+    def coefs(self, exempt_bias = False):
+        return self.Module.get_coefs(exempt_bias = exempt_bias)

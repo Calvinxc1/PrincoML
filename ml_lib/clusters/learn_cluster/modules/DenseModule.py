@@ -87,3 +87,10 @@ class DenseModule(Root):
             self.coefs = self.coefs - learn_step
         
         self.coefs.requires_grad = True
+        
+    def get_coefs(self, exempt_bias = False):
+        if exempt_bias & self.bias_active:
+            coefs = self.coefs[1:, :]
+        else:
+            coefs = self.coefs
+        return coefs

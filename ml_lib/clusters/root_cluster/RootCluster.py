@@ -112,3 +112,7 @@ class RootCluster:
     def learn(self, loss):
         ## Define in child classes
         pass
+    
+    def coefs(self, exempt_bias = False):
+        ## define in child classes
+        return None

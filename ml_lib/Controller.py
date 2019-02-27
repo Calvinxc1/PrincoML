@@ -4,20 +4,25 @@ import tqdm
 import matplotlib.pyplot as plt
 
 from ml_lib.utils.loss_combiners.MeanLossCombine import MeanLossCombine
+from ml_lib.utils.regularizers.RootRegularizer import RootRegularizer
 
 class Controller:
     defaults = {
         'train_split': 'train',
         'use_tqdm': True,
         'loss_combiner': MeanLossCombine, 'loss_combiner_kwargs': {},
+        'regularizer': RootRegularizer, 'regularizer_kwargs': {}
     }
     
     def __init__(self, control_name,
                  train_split = None, use_tqdm = None,
-                 loss_combiner = None, loss_combiner_kwargs = {}
+                 loss_combiner = None, loss_combiner_kwargs = {},
+                 regularizer = None, regularizer_kwargs = {}
                 ):
         loss_combiner = self.defaults['loss_combiner'] if loss_combiner is None else loss_combiner
         loss_combiner_kwargs = {**self.defaults['loss_combiner_kwargs'], **loss_combiner_kwargs}
+        regularizer = self.defaults['regularizer'] if regularizer is None else regularizer
+        regularizer_kwargs = {**self.defaults['regularizer_kwargs'], **regularizer_kwargs}
         
         self.name = control_name
         self.clusters = {}
@@ -26,6 +31,7 @@ class Controller:
         self.enabled = False
         
         self.LossCombiner = loss_combiner(self.name, **loss_combiner_kwargs)
+        self.Regularizer = regularizer(self.name, **regularizer_kwargs)
         
     def add_cluster(self, cluster):
         if cluster.name in self.clusters.keys():
@@ -52,6 +58,7 @@ class Controller:
     def enable_network(self):
         for cluster in self.clusters.values(): cluster.enable()
         self.loss_record = {}
+        self.build_batch_splits()
             
     def build_batch_splits(self):
         for cluster in self.clusters.values(): cluster.build_batch_splits()
@@ -77,7 +84,10 @@ class Controller:
             
     def network_learn(self):
         network_loss = self.network_loss[self.train_split]
-        for cluster in self.clusters.values(): cluster.learn(network_loss)
+        reg_loss = self.Regularizer.regularize(self.coefs(True))
+        learn_loss = network_loss + reg_loss
+        
+        for cluster in self.clusters.values(): cluster.learn(learn_loss)
             
     def train_model(self, epocs):
         t = tqdm.tnrange(epocs) if self.use_tqdm else range(epocs)
@@ -100,3 +110,7 @@ class Controller:
         for key, value in self.loss_record.items():
             plt.plot(value, label = key)
         plt.legend()
+        
+    def coefs(self, exempt_bias):
+        coefs = [cluster.coefs(exempt_bias = exempt_bias) for cluster in self.clusters.values() if cluster.coefs(exempt_bias = exempt_bias) is not None]
+        return coefs

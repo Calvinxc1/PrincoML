@@ -29,7 +29,7 @@ class BalanceSplit(Root):
         
         extra = (split_array.sum(axis = 1, keepdims = True) == 0).astype(int)
         if extra.sum() > 0:
-            split_array = np.concatenate((split_array, extra), dim = 1)
+            split_array = np.concatenate((split_array, extra), axis = 1)
             
         self.splits = {}
         for col_idx in range(split_array.shape[1]):
