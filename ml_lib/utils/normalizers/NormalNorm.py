@@ -1,8 +1,8 @@
 from ml_lib.utils.normalizers.RootNorm import RootNorm as Root
 
 class NormalNorm(Root):
-    def __init__(self, path_name = None, verbose = None):
-        super().__init__(path_name = path_name, verbose = verbose)
+    def __init__(self, path_name = None, verbose = None, ignore_cols = None):
+        super().__init__(path_name = path_name, verbose = verbose, ignore_cols = ignore_cols)
         self.mean = None
         self.stdev = None
     
