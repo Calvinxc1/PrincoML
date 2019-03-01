@@ -99,5 +99,5 @@ class DenseModule(Root):
         return coefs
     
     def lock_coefs(self):
-        self.coefs = self.best_coefs
+        self.coefs = self.best_coefs.clone()
         self.coefs.requires_grad = True

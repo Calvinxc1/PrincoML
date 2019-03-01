@@ -9,11 +9,10 @@ from ml_lib.utils.regularizers.NormRegularizer import NormRegularizer
 
 class Controller:
     defaults = {
-        'train_split': 'train',
+        'train_split': 'train', 'coef_lock_split': 'holdout',
         'use_tqdm': True,
         'loss_combiner': MeanLossCombine, 'loss_combiner_kwargs': {},
         'regularizer': NormRegularizer, 'regularizer_kwargs': {'l1': 0, 'l2': 0},
-        'coef_lock_split': 'holdout',
         'loss_smooth_coefs': np.array([0.9, 10])
     }
     
@@ -64,6 +63,7 @@ class Controller:
     def enable_network(self):
         for cluster in self.clusters.values(): cluster.enable()
         self.loss_record = {'raw': {}, 'smooth': {}}
+        self.lowest_loss = np.inf
         self.build_batch_splits()
             
     def build_batch_splits(self):
@@ -99,14 +99,15 @@ class Controller:
     def train_model(self, epocs, lock_coefs = False):
         t = tqdm.tnrange(epocs) if self.use_tqdm else range(epocs)
         
-        lowest_loss = np.inf
         self.best_epoc = 0
         
         for epoc in t:
+            best_iter = False
             self.build_batch_splits()
             
-            postfix = {'best_epoc': self.best_epoc}
-            for key, value in self.network_loss.items():
+            postfix = {'best_epoc': self.best_epoc, 'best_loss': self.lowest_loss}
+            network_loss = self.network_loss
+            for key, value in network_loss.items():
                 if key not in self.loss_record['raw']: self.loss_record['raw'][key] = []
                 if key not in self.loss_record['smooth']: self.loss_record['smooth'][key] = []
                 
@@ -120,18 +121,18 @@ class Controller:
                 postfix[key] = self.loss_record['smooth'][key][-1]
             
             if self.use_tqdm: t.set_postfix(postfix)
-                
-            if np.any([pd.isnull(loss) for loss in postfix.values()]):
-                print('Null value appeared! Terminating learning!')
-                break
             
-            if self.loss_record['smooth'][self.coef_lock_split][-1] < lowest_loss:
+            if self.loss_record['smooth'][self.coef_lock_split][-1] < self.lowest_loss:
                 best_iter = True
-                lowest_loss = self.loss_record['smooth'][self.coef_lock_split][-1]
+                self.lowest_loss = self.loss_record['smooth'][self.coef_lock_split][-1]
                 self.best_epoc = epoc
             
             self.network_learn(best_iter)
             self.clear_buffers()
+            
+            if np.any([(pd.isnull(loss.detach().cpu().numpy()) | np.isinf(loss.detach().cpu().numpy())) for loss in network_loss.values()]):
+                print('Null value appeared! Terminating learning!')
+                break
             
         if lock_coefs: self.lock_coefs()
             
@@ -158,6 +159,8 @@ class Controller:
         for cluster, data_frame in data_dict.items():
             self.clusters[cluster].load_manual_data(data_frame)
         
+        self.clear_buffers()
+        
         predicts = {}
         for cluster_name, cluster in self.clusters.items():
             if cluster_name in data_dict.keys(): continue
@@ -168,6 +171,8 @@ class Controller:
             predicts[cluster_name] = predict
             
         losses = self.network_loss['all'].detach().cpu().numpy()
+        
+        self.clear_buffers()
         
         for cluster in data_dict.keys():
             self.clusters[cluster].unload_manual_data()
