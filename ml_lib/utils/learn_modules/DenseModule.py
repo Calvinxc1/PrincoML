@@ -77,7 +77,10 @@ class DenseModule(Root):
         activated_tensor = self.Activator.activate(combined_tensor)
         return activated_tensor
     
-    def learn(self, loss):
+    def learn(self, loss, best_iter = False):
+        if best_iter:
+            self.best_coefs = self.coefs.detach().clone()
+        
         learn_step = self.Learner.learn(loss, self.coefs)
         with pt.no_grad():
             if self.nesterov:
@@ -94,3 +97,7 @@ class DenseModule(Root):
         else:
             coefs = self.coefs
         return coefs
+    
+    def lock_coefs(self):
+        self.coefs = self.best_coefs
+        self.coefs.requires_grad = True

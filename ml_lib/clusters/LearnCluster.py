@@ -36,8 +36,15 @@ class LearnCluster(Root):
         
         return output_tensor
     
-    def learn(self, loss):
-        self.Module.learn(loss)
+    def learn(self, loss, best_iter = False):
+        self.Module.learn(loss, best_iter = best_iter)
+        
+    def lock_coefs(self):
+        self.Module.lock_coefs()
         
     def coefs(self, exempt_bias = False):
         return self.Module.get_coefs(exempt_bias = exempt_bias)
+    
+    def predict(self):
+        predict_array = self.get_output_tensor(None).detach().cpu().numpy()
+        return predict_array

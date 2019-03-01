@@ -1,3 +1,4 @@
+import pandas as pd
 import numpy as np
 import torch as pt
 import tqdm
@@ -11,11 +12,13 @@ class Controller:
         'train_split': 'train',
         'use_tqdm': True,
         'loss_combiner': MeanLossCombine, 'loss_combiner_kwargs': {},
-        'regularizer': NormRegularizer, 'regularizer_kwargs': {'l1': 0, 'l2': 0}
+        'regularizer': NormRegularizer, 'regularizer_kwargs': {'l1': 0, 'l2': 0},
+        'coef_lock_split': 'holdout',
+        'loss_smooth_coefs': np.array([0.9, 10])
     }
     
-    def __init__(self, control_name,
-                 train_split = None, use_tqdm = None,
+    def __init__(self, control_name, coef_lock_split = None,
+                 train_split = None, use_tqdm = None, loss_smooth_coefs = None,
                  loss_combiner = None, loss_combiner_kwargs = {},
                  regularizer = None, regularizer_kwargs = {}
                 ):
@@ -23,12 +26,15 @@ class Controller:
         loss_combiner_kwargs = {**self.defaults['loss_combiner_kwargs'], **loss_combiner_kwargs}
         regularizer = self.defaults['regularizer'] if regularizer is None else regularizer
         regularizer_kwargs = {**self.defaults['regularizer_kwargs'], **regularizer_kwargs}
+        loss_smooth_coefs = np.array(self.defaults['loss_smooth_coefs'] if loss_smooth_coefs is None else loss_smooth_coefs)
         
         self.name = control_name
         self.clusters = {}
         self.train_split = self.defaults['train_split'] if train_split is None else train_split
         self.use_tqdm = self.defaults['use_tqdm'] if use_tqdm is None else use_tqdm
+        self.coef_lock_split = self.defaults['coef_lock_split'] if coef_lock_split is None else coef_lock_split
         self.enabled = False
+        self.loss_smooth = 1 - ((1 - loss_smooth_coefs[0]) ** (1 / loss_smooth_coefs[1]))
         
         self.LossCombiner = loss_combiner(self.name, **loss_combiner_kwargs)
         self.Regularizer = regularizer(self.name, **regularizer_kwargs)
@@ -57,7 +63,7 @@ class Controller:
             
     def enable_network(self):
         for cluster in self.clusters.values(): cluster.enable()
-        self.loss_record = {}
+        self.loss_record = {'raw': {}, 'smooth': {}}
         self.build_batch_splits()
             
     def build_batch_splits(self):
@@ -82,35 +88,88 @@ class Controller:
     def clear_buffers(self):
         for cluster in self.clusters.values(): cluster.clear_buffer()
             
-    def network_learn(self):
+    def network_learn(self, best_iter):
         network_loss = self.network_loss[self.train_split]
-        reg_loss = self.Regularizer.regularize(self.network_coefs(True))
+        coefs = [coef for coef in self.network_coefs(True).values()]
+        reg_loss = self.Regularizer.regularize(coefs)
         learn_loss = network_loss + reg_loss
         
-        for cluster in self.clusters.values(): cluster.learn(learn_loss)
+        for cluster in self.clusters.values(): cluster.learn(learn_loss, best_iter = best_iter)
             
-    def train_model(self, epocs):
+    def train_model(self, epocs, lock_coefs = False):
         t = tqdm.tnrange(epocs) if self.use_tqdm else range(epocs)
+        
+        lowest_loss = np.inf
+        self.best_epoc = 0
+        
         for epoc in t:
             self.build_batch_splits()
             
-            postfix = {}
+            postfix = {'best_epoc': self.best_epoc}
             for key, value in self.network_loss.items():
-                if key not in self.loss_record: self.loss_record[key] = []
-                self.loss_record[key].append(np.asscalar(value.detach().cpu().numpy()))
-                postfix[key] = self.loss_record[key][-1]
+                if key not in self.loss_record['raw']: self.loss_record['raw'][key] = []
+                if key not in self.loss_record['smooth']: self.loss_record['smooth'][key] = []
+                
+                loss_val = np.asscalar(value.detach().cpu().numpy())
+                prior_loss = loss_val if len(self.loss_record['smooth'][key]) == 0 else self.loss_record['smooth'][key][-1]
+                smooth_loss = (self.loss_smooth * loss_val) + ((1 - self.loss_smooth) * prior_loss)
+                
+                self.loss_record['raw'][key].append(loss_val)
+                self.loss_record['smooth'][key].append(smooth_loss)
+                
+                postfix[key] = self.loss_record['smooth'][key][-1]
             
             if self.use_tqdm: t.set_postfix(postfix)
+                
+            if np.any([pd.isnull(loss) for loss in postfix.values()]):
+                print('Null value appeared! Terminating learning!')
+                break
             
-            self.network_learn()
+            if self.loss_record['smooth'][self.coef_lock_split][-1] < lowest_loss:
+                best_iter = True
+                lowest_loss = self.loss_record['smooth'][self.coef_lock_split][-1]
+                self.best_epoc = epoc
+            
+            self.network_learn(best_iter)
             self.clear_buffers()
             
-    def plot_losses(self, figsize = (16, 10)):
+        if lock_coefs: self.lock_coefs()
+            
+    def lock_coefs(self):
+        for cluster in self.clusters.values():
+            cluster.lock_coefs()
+            
+    def plot_losses(self, start_idx = 0, end_idx = None, loss_type = 'smooth', figsize = (16, 10)):
         plt.figure(figsize = figsize)
-        for key, value in self.loss_record.items():
-            plt.plot(value, label = key)
+        for key, value in self.loss_record[loss_type].items():
+            plt.plot(value[start_idx:len(value) if end_idx is None else end_idx], label = key)
+        plt.axvline(self.best_epoc, c = 'r', label = 'best_epoc')
         plt.legend()
         
-    def network_coefs(self, exempt_bias):
-        coefs = [cluster.coefs(exempt_bias = exempt_bias) for cluster in self.clusters.values() if cluster.coefs(exempt_bias = exempt_bias) is not None]
+    def network_coefs(self, exempt_bias = False):
+        coefs = {}
+        for cluster_name, cluster in self.clusters.items():
+            cluster_coefs = cluster.coefs(exempt_bias = exempt_bias)
+            if cluster_coefs is None: continue
+            coefs[cluster_name] = cluster_coefs
         return coefs
+    
+    def predict(self, data_dict):
+        for cluster, data_frame in data_dict.items():
+            self.clusters[cluster].load_manual_data(data_frame)
+        
+        predicts = {}
+        for cluster_name, cluster in self.clusters.items():
+            if cluster_name in data_dict.keys(): continue
+            
+            predict = cluster.predict()
+            if predict is None: continue
+            
+            predicts[cluster_name] = predict
+            
+        losses = self.network_loss['all'].detach().cpu().numpy()
+        
+        for cluster in data_dict.keys():
+            self.clusters[cluster].unload_manual_data()
+        
+        return {'outputs': predicts, 'loss': losses}

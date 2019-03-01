@@ -33,6 +33,7 @@ class DataCluster(Root):
         
         super().__init__(cluster_name, path_name = path_name, verbose = verbose)
         self.data = None
+        self.manual_data = None
         
         self.Normalizer = normalizer(path_name = '%s:%s' % (self.path_name, self.name), **normalizer_kwargs)
         self.add_data(data_frame)
@@ -51,23 +52,22 @@ class DataCluster(Root):
         return link_cols
         
     def add_data(self, data_frame, overwrite = False):
-        
-        def convert_frame(data_frame):
-            data_dict = {
-                'tensor': pt.from_numpy(data_frame.values).type(pt.Tensor),
-                'columns': data_frame.columns,
-                'index': data_frame.index
-            }
-
-            return data_dict
-        
         if (self.data is not None) & (not overwrite):
             raise Exception('%s: Attempting to overwrite existing data_frame when overwrite is False' % self.name)
             
         normed_data = self.Normalizer.norm_data(data_frame)
-        self.data = convert_frame(normed_data)
+        self.data = self.convert_frame(normed_data)
         
         self._v_msg('Data frame added, overwrite %s.' % overwrite)
+        
+    def convert_frame(self, data_frame):
+        data_dict = {
+            'tensor': pt.from_numpy(data_frame.values).type(pt.Tensor),
+            'columns': data_frame.columns,
+            'index': data_frame.index
+        }
+
+        return data_dict
         
     def add_link(self, cluster, link_type, data_cols = None, **kwargs):
         if data_cols is None: raise Exception('data_cols kwarg cannot be empty.')        
@@ -87,7 +87,10 @@ class DataCluster(Root):
         
     def get_output_tensor(self, req_cluster_name):
         link_cols = self._link_cols(req_cluster_name, 'output')
-        output_tensor = self.data['tensor'][self.batch_tensor_idx, :][:, link_cols]
+        if self.manual_data is None:
+            output_tensor = self.data['tensor'][self.batch_tensor_idx, :][:, link_cols]
+        else:
+            output_tensor = self.manual_data['tensor'][:, link_cols]
         
         self._v_msg('Output tensor shape %s provided.' % (tuple([dim for dim in output_tensor.size()]),))
         
@@ -114,7 +117,13 @@ class DataCluster(Root):
             run_idx = 0
             predict_tensor = self.input_tensor
             target_tensor = self.target_tensor
-            for batch_split in self.batch_splits:
+            
+            if self.manual_data is None:
+                splits = self.batch_splits
+            else:
+                splits = [{'name': 'all', 'index': np.arange(predict_tensor.size()[0])}]
+                
+            for batch_split in splits:
                 self._v_msg('Building loss for %s.' % batch_split['name'])
                 loss_tensor = self.Loss.loss(
                     target_tensor[batch_split['index'], :],
@@ -131,3 +140,20 @@ class DataCluster(Root):
             self._v_msg('Retrieving loss tensor from buffer.')
         
         return loss_vals
+    
+    def load_manual_data(self, data_frame, normalize = True):
+        working_data = data_frame.copy()
+        if normalize:
+            working_data = self.Normalizer.norm_new_data(working_data)
+        
+        self.manual_data = self.convert_frame(working_data)
+        
+    def unload_manual_data(self):
+        self.manual_data = None
+        
+    def predict(self):
+        if self.manual_data is None:
+            raise Exception('No manual data loaded. Please load manual data before predicting values.')
+               
+        predict_frame = self.input_tensor.detach().cpu().numpy()
+        return predict_frame

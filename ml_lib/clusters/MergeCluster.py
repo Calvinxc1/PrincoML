@@ -57,3 +57,7 @@ class MergeCluster(Root):
             self._v_msg('Retrieving output tensor from buffer.')
             
         return output_tensor
+    
+    def predict(self):
+        predict_array = self.get_output_tensor(None).detach().cpu().numpy()
+        return predict_array

@@ -109,10 +109,18 @@ class RootCluster:
     def clear_buffer(self):
         self.buffer = None
         
-    def learn(self, loss):
+    def learn(self, loss, best_iter = False):
         ## Define in child classes
         pass
     
     def coefs(self, exempt_bias = False):
+        ## define in child classes
+        return None
+    
+    def lock_coefs(self):
+        ## define in child classes
+        pass
+    
+    def predict(self):
         ## define in child classes
         return None

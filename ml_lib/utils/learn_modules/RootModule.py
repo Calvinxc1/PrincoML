@@ -24,7 +24,15 @@ class RootModule:
             raise Exception('Module is already enabled and override is False.')
         
         self.enabled = True
+        
+    def learn(self, loss, best_iter = False):
+        ## Define in child classes
+        pass
     
     def get_coefs(self, exempt_bias = False):
-        ## Define in child class
+        ## Define in child classes
+        pass
+    
+    def lock_coefs(self):
+        ## Define in child classes
         pass
