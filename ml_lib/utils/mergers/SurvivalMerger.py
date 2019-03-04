@@ -20,13 +20,14 @@ class SurvivalMerger(Root):
         self.output_space = self.defaults['output_space'] if output_space is None else output_space
     
     def merge_process(self, input_tensor):
-        time, alpha, beta = [input_tensor[:,:,idx] for idx in range(self.defaults['inputs'])]
+        time, alpha, beta = [input_tensor[:,:,idx] for idx in range(self.inputs)]
         time_alpha = time + alpha
+        
         if self.output_space == 'prob':
             merge_tensor = time_alpha / (time_alpha + beta)
-        if self.output_space == 'sig':
+        elif self.output_space == 'sig':
             merge_tensor = -pt.log(beta / time_alpha)
         else:
-            raise Exception ('output_space set to %s, but must be either "prob" or "sig"' % self.output_space)
+            raise Exception ('output_space set to "%s", but must be either "prob" or "sig".' % self.output_space)
         
         return merge_tensor

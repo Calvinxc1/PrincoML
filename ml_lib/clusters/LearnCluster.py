@@ -7,13 +7,13 @@ class LearnCluster(Root):
         'module': DenseModule, 'module_kwargs': {}
     }
     
-    def __init__(self, cluster_name, path_name = None, verbose = None,
+    def __init__(self, cluster_name, path_name = None, verbose = None, reshape = None,
                  module = None, module_kwargs = None
                 ):
         module = self.defaults['module'] if module is None else module
         module_kwargs = self.defaults['module_kwargs'] if module_kwargs is None else module_kwargs
         
-        super().__init__(cluster_name, path_name = path_name, verbose = verbose)
+        super().__init__(cluster_name, path_name = path_name, verbose = verbose, reshape = reshape)
         
         self.Module = module(path_name = '%s:%s' % (self.path_name, self.name), **module_kwargs)
         
@@ -24,7 +24,7 @@ class LearnCluster(Root):
     def get_output_count(self, req_cluster_name):
         return self.Module.output_count
         
-    def get_output_tensor(self, req_cluster_name):
+    def load_output_tensor(self, req_cluster_name):
         if self.enable is False: raise Exception('Cluster is not enabled!')
             
         if self.buffer is None:

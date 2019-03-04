@@ -28,7 +28,7 @@ class NormRegularizer(Root):
             
         if self.l2 != 0:
             reg_loss_ridge = pt.cat([coef.reshape(1,-1).squeeze() for coef in coefs], dim = 0) ** 2
-            reg_loss_ridge = reg_loss_ridge.mean() if self.mean else reg_loss_ridge.sum()
+            reg_loss_ridge = pt.sqrt(reg_loss_ridge.mean() if self.mean else reg_loss_ridge.sum())
             reg_loss_ridge = reg_loss_ridge * self.l2
             reg_loss += reg_loss_ridge
         

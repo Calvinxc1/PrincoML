@@ -11,7 +11,7 @@ class MergeCluster(Root):
         'activator': LinearActivate, 'activator_kwargs': {}
     }
     
-    def __init__(self, cluster_name, path_name = None, verbose = None,
+    def __init__(self, cluster_name, path_name = None, verbose = None, reshape = None,
                  merger = None, merger_kwargs = None,
                  activator = None, activator_kwargs = None
                 ):
@@ -21,7 +21,7 @@ class MergeCluster(Root):
         activator = self.defaults['activator'] if activator is None else activator
         activator_kwargs = self.defaults['activator_kwargs'] if activator_kwargs is None else activator_kwargs
         
-        super().__init__(cluster_name, path_name = path_name, verbose = verbose)
+        super().__init__(cluster_name, path_name = path_name, verbose = verbose, reshape = reshape)
         
         self.Merger = merger(path_name = '%s:%s' % (self.path_name, self.name), **merger_kwargs)
         self.Activator = activator(path_name = '%s:%s' % (self.path_name, self.name), **activator_kwargs)
@@ -36,16 +36,25 @@ class MergeCluster(Root):
     
     @property
     def input_tensor(self):
-        input_tensor = pt.stack([
-            link['cluster'].get_output_tensor(self.name)
-            for link in self.links['input']
-        ], dim = 2)
+        input_tensor = []
+        for link in self.links['input']:
+            link_tensor = link['cluster'].get_output_tensor(self.name)
+            link_len = len(link_tensor.size())
+            if link_len == 2:
+                input_tensor.append(link_tensor.view(*link_tensor.size(), 1))
+            elif link_len == 3: 
+                input_tensor.append(link_tensor)
+            else:
+                raise Exception('link_tensor has %s dimensions, can only support 2 or 3 dimension inputs' % link_len)
+        
+        input_tensor = pt.cat(input_tensor, dim = 2)
+        
         return input_tensor
     
     def get_output_count(self, req_cluster_name):
         return self.input_count
     
-    def get_output_tensor(self, req_cluster_name):
+    def load_output_tensor(self, req_cluster_name):
         if self.enable is False: raise Exception('Cluster is not enabled!')
         
         if self.buffer is None:

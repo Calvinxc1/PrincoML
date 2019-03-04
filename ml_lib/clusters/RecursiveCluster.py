@@ -5,9 +5,9 @@ class RecursiveCluster(Root):
         **Root.defaults
     }
     
-    def __init__(self, cluster_name, path_name = None, verbose = None
+    def __init__(self, cluster_name, path_name = None, verbose = None, reshape = None,
                 ):
-        super().__init__(cluster_name, path_name = path_name, verbose = verbose)
+        super().__init__(cluster_name, path_name = path_name, verbose = verbose, reshape = reshape)
         
     def enable(self, override = False):
         super().enable(override = override)
@@ -15,7 +15,7 @@ class RecursiveCluster(Root):
     def get_output_count(self, req_cluster_name):
         return self.Module.output_count
         
-    def get_output_tensor(self, req_cluster_name):
+    def load_output_tensor(self, req_cluster_name):
         if self.enable is False: raise Exception('Cluster is not enabled!')
             
         if self.buffer is None:

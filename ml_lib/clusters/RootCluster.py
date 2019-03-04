@@ -4,12 +4,16 @@ import torch as pt
 class RootCluster:
     defaults = {
         'path_name': 'N/A',
-        'verbose': False
+        'verbose': False,
+        'reshape': None
     }
 
-    def __init__(self, cluster_name, path_name = None, verbose = None):
+    def __init__(self, cluster_name, path_name = None, verbose = None,
+                 reshape = None
+                ):
         self.path_name = self.defaults['path_name'] if path_name is None else path_name
         self.verbose = self.defaults['verbose'] if verbose is None else verbose
+        self.reshape = self.defaults['reshape'] if reshape is None else reshape
         
         self.name = cluster_name
         self.links = {
@@ -70,7 +74,24 @@ class RootCluster:
         return 0
     
     def get_output_tensor(self, req_cluster_name):
-        ## Define in child classes
+        output_tensor = self.load_output_tensor(req_cluster_name)
+        
+        if self.reshape is not None:
+            reshaper = []
+            for reshape_idx in range(len(self.reshape)):
+                reshape_item = self.reshape[reshape_idx]
+                if reshape_item is None:
+                    reshape_val = output_tensor.size()[reshape_idx]
+                else:
+                    reshape_val = reshape_item
+                reshaper.append(reshape_val)
+            
+            output_tensor = output_tensor.view(reshaper)
+        
+        return output_tensor
+    
+    def load_output_tensor(self, req_cluster_name):
+        ## define in child classes
         pass
     
     @property

@@ -18,7 +18,7 @@ class DataCluster(Root):
         'loss_combiner': MeanLossCombine,
     }
     
-    def __init__(self, cluster_name, data_frame, path_name = None, verbose = None,
+    def __init__(self, cluster_name, data_frame, path_name = None, verbose = None, reshape = None,
                  normalizer = None, normalizer_kwargs = {},
                  splitter = None, splitter_kwargs = {},
                  batcher = None, batcher_kwargs = {},
@@ -31,7 +31,7 @@ class DataCluster(Root):
         loss = self.defaults['loss'] if loss is None else loss
         loss_combiner = self.defaults['loss_combiner'] if loss_combiner is None else loss_combiner
         
-        super().__init__(cluster_name, path_name = path_name, verbose = verbose)
+        super().__init__(cluster_name, path_name = path_name, verbose = verbose, reshape = None)
         self.data = None
         self.manual_data = None
         
@@ -50,6 +50,14 @@ class DataCluster(Root):
             
         link_cols = self.links[link_type][link_idx]['params']['columns']
         return link_cols
+    
+    def _link_reshape(self, cluster_name, link_type):
+        link_idx = self._link_idx(cluster_name, link_type)
+        if link_idx is None:
+            raise Exception('%s: Cluster %s not present in %s links.' % (self.name, cluster_name, link_type))
+            
+        link_reshape = self.links[link_type][link_idx]['params']['reshape']
+        return link_reshape
         
     def add_data(self, data_frame, overwrite = False):
         if (self.data is not None) & (not overwrite):
@@ -69,13 +77,14 @@ class DataCluster(Root):
 
         return data_dict
         
-    def add_link(self, cluster, link_type, data_cols = None, **kwargs):
+    def add_link(self, cluster, link_type, data_cols = None, reshape = None, **kwargs):
         if data_cols is None: raise Exception('data_cols kwarg cannot be empty.')        
         
         col_idx = np.array([self.data['columns'].get_loc(col) for col in data_cols])
         super().add_link(cluster, link_type)
         
         self.links[link_type][-1]['params']['columns'] = col_idx
+        self.links[link_type][-1]['params']['reshape'] = reshape
         
     def get_output_count(self, req_cluster_name):
         link_cols = self._link_cols(req_cluster_name, 'output')
@@ -86,6 +95,24 @@ class DataCluster(Root):
         self.batch_splits = self.Batcher.batch_obs(self.Splitter.splits)
         
     def get_output_tensor(self, req_cluster_name):
+        output_tensor = self.load_output_tensor(req_cluster_name)
+        
+        reshape = self._link_reshape(req_cluster_name, 'output')
+        if reshape is not None:
+            reshaper = []
+            for reshape_idx in len(reshape):
+                reshape_item = reshape[reshape_idx]
+                if reshape_item is None:
+                    reshape_val = output_tensor.size()[reshape_idx]
+                else:
+                    reshape_val = reshape_item
+                reshaper.append(reshape_val)
+            
+            output_tensor = output_tensor.view(reshaper)
+        
+        return output_tensor
+        
+    def load_output_tensor(self, req_cluster_name):
         link_cols = self._link_cols(req_cluster_name, 'output')
         if self.manual_data is None:
             output_tensor = self.data['tensor'][self.batch_tensor_idx, :][:, link_cols]
