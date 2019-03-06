@@ -48,3 +48,7 @@ class LearnCluster(Root):
     def predict(self):
         predict_array = self.get_output_tensor(None).detach().cpu().numpy()
         return predict_array
+    
+    @property
+    def learn_rate(self):
+        return self.Module.learn_rate

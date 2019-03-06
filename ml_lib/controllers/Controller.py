@@ -63,6 +63,7 @@ class Controller:
     def enable_network(self):
         for cluster in self.clusters.values(): cluster.enable()
         self.loss_record = {'raw': {}, 'smooth': {}}
+        self.learn_rate_record = {}
         self.lowest_loss = np.inf
         self.build_batch_splits()
             
@@ -105,6 +106,11 @@ class Controller:
             best_iter = False
             self.build_batch_splits()
             
+            learn_rates = self.network_learn_rates
+            for key, value in learn_rates.items():
+                if key not in self.learn_rate_record: self.learn_rate_record[key] = []
+                self.learn_rate_record[key].append(value)
+            
             postfix = {'best_epoc': self.best_epoc, 'best_loss': self.lowest_loss}
             network_loss = self.network_loss
             for key, value in network_loss.items():
@@ -121,18 +127,18 @@ class Controller:
                 postfix[key] = self.loss_record['smooth'][key][-1]
             
             if self.use_tqdm: t.set_postfix(postfix)
-            
-            if self.loss_record['smooth'][self.coef_lock_split][-1] < self.lowest_loss:
-                best_iter = True
-                self.lowest_loss = self.loss_record['smooth'][self.coef_lock_split][-1]
-                self.best_epoc = epoc
-            
+
             self.network_learn(best_iter)
             self.clear_buffers()
             
             if np.any([(pd.isnull(loss.detach().cpu().numpy()) | np.isinf(loss.detach().cpu().numpy())) for loss in network_loss.values()]):
                 print('Null value appeared! Terminating learning!')
                 break
+                
+            if self.loss_record['smooth'][self.coef_lock_split][-1] < self.lowest_loss:
+                best_iter = True
+                self.lowest_loss = self.loss_record['smooth'][self.coef_lock_split][-1]
+                self.best_epoc = epoc
             
         if lock_coefs: self.lock_coefs()
             
@@ -178,3 +184,19 @@ class Controller:
             self.clusters[cluster].unload_manual_data()
         
         return {'outputs': predicts, 'loss': losses}
+    
+    @property
+    def network_learn_rates(self):
+        learn_rates = {}
+        for cluster_name, cluster in self.clusters.items():
+            learn_rate = cluster.learn_rate
+            if learn_rate is None: continue
+            learn_rates[cluster_name] = learn_rate
+            
+        return learn_rates
+    
+    def plot_learn_rates(self, figsize = (16, 10)):
+        plt.figure(figsize=figsize)
+        for cluster, learns in self.learn_rate_record.items():
+            plt.plot(learns, label = cluster)
+        plt.legend()

@@ -6,9 +6,9 @@ class GradientLearner(Root):
     def learn(self, loss, coefs):
         (gradient,) = pt.autograd.grad(loss, coefs)
         with pt.no_grad():
-            learn_step = gradient * self.learn_rate
-            if self.coef_scale: learn_step /= coefs.size()[0]
+            learn_step = gradient
+            if self.coef_scale: gradient /= coefs.size()[0]
             
-        self._v_msg('Gradient Descent updated %s coefs, learn_rate %s.' % (new_coefs.numel(), self.learn_rate))
+        self._v_msg('Gradient Descent updated %s coefs.' % new_coefs.numel())
             
         return learn_step

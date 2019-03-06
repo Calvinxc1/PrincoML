@@ -11,32 +11,38 @@ class SmoothLearner(Root):
         'clamper': 1e-16
     }
     
-    def __init__(self, path_name = None, verbose = None, learn_rate = None, coef_scale = None,
+    def __init__(self, path_name = None, verbose = None, coef_scale = None,
                  alpha = None, beta = None, clamper = None, scalers = None
                 ):
-        super().__init__(path_name = path_name, verbose = verbose, learn_rate = learn_rate, coef_scale = coef_scale)
+        super().__init__(path_name = path_name, verbose = verbose, coef_scale = coef_scale)
         self.alpha = self.defaults['alpha'] if alpha is None else alpha
         self.beta = self.defaults['beta'] if beta is None else beta
         self.clamper = self.defaults['clamper'] if clamper is None else clamper
-        self.gradient = 0
-        self.grad_sq = 0
+        self.gradient = None
+        self.grad_sq = None
         self.iter_count = 1
     
     def learn(self, loss, coefs):
         gradient = pt.autograd.grad(loss, coefs, create_graph = True)[0]
         
         with pt.no_grad():
-            self.gradient = (self.alpha * gradient) + ((1 - self.alpha) * self.gradient)
-            self.grad_sq = (self.beta * (gradient ** 2)) + ((1 - self.beta) * self.grad_sq)
+            if self.gradient is None:
+                self.gradient = gradient
+            else:
+                self.gradient = (self.alpha * gradient) + ((1 - self.alpha) * self.gradient)
+            
+            if self.grad_sq is None:
+                self.grad_sq = gradient ** 2
+            else:
+                self.grad_sq = (self.beta * (gradient ** 2)) + ((1 - self.beta) * self.grad_sq)
             
             learn_step = self.gradient / pt.clamp(pt.sqrt(self.grad_sq), self.clamper, np.inf)
             
-            learn_step *= self.learn_rate
             if self.coef_scale: learn_step /= coefs.size()[0]
             
             self.iter_count += 1
             
-        self._v_msg('Smooth updated %s coefs, learn_rate %s.' % (coefs.numel(), self.learn_rate))
+        self._v_msg('Smooth updated %s coefs.' % coefs.numel())
             
         return learn_step
     

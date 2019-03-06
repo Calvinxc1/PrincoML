@@ -8,10 +8,10 @@ class NewtonLearner(Root):
         'full_hessian': False
     }
     
-    def __init__(self, path_name = None, verbose = None, learn_rate = None, coef_scale = None,
+    def __init__(self, path_name = None, verbose = None, coef_scale = None,
                  full_hessian = None
                 ):
-        super().__init__(path_name = path_name, verbose = verbose, learn_rate = learn_rate, coef_scale = coef_scale)
+        super().__init__(path_name = path_name, verbose = verbose, coef_scale = coef_scale)
         self.full_hessian = self.defaults['full_hessian'] if full_hessian is None else full_hessian
     
     def learn(self, loss, coefs):
@@ -25,13 +25,12 @@ class NewtonLearner(Root):
             else:
                 learn_step = flat_grad / pt.diag(hessian)
             
-            learn_step *= self.learn_rate
             if self.coef_scale: learn_step /= coefs.size()[0]
             learn_step[learn_step != learn_step] = 0
             
             learn_step = learn_step.view(coefs.size())
             
-        self._v_msg('Newton Method updated %s coefs, learn_rate %s.' % (new_coefs.numel(), self.learn_rate))
+        self._v_msg('Newton Method updated %s coefs.' % new_coefs.numel())
             
         return learn_step
     

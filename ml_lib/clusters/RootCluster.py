@@ -145,3 +145,8 @@ class RootCluster:
     def predict(self):
         ## define in child classes
         return None
+    
+    @property
+    def learn_rate(self):
+        ## define in child classes
+        return None
