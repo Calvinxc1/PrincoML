@@ -3,6 +3,9 @@ My personal modular Neural Net code
 
 ## Revision History
 
+#### 2019/03/06
+* Controller: Fixed a bug created in the resequenced learning routine, which broke best coef saving, still doesn't save -inf coefs though
+
 #### 2019/03/05
 * Learning Rate is now a class within the Dense Learn Module, allowing for dynamic learning rates
 * Created the following Learn Rate classes: Flat, Time Decay, Exponential Decay, Step Decay

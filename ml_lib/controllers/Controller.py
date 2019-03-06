@@ -127,6 +127,11 @@ class Controller:
                 postfix[key] = self.loss_record['smooth'][key][-1]
             
             if self.use_tqdm: t.set_postfix(postfix)
+                
+            if (self.loss_record['smooth'][self.coef_lock_split][-1] < self.lowest_loss) & (self.loss_record['smooth'][self.coef_lock_split][-1] != -np.inf):
+                best_iter = True
+                self.lowest_loss = self.loss_record['smooth'][self.coef_lock_split][-1]
+                self.best_epoc = epoc
 
             self.network_learn(best_iter)
             self.clear_buffers()
@@ -134,11 +139,6 @@ class Controller:
             if np.any([(pd.isnull(loss.detach().cpu().numpy()) | np.isinf(loss.detach().cpu().numpy())) for loss in network_loss.values()]):
                 print('Null value appeared! Terminating learning!')
                 break
-                
-            if self.loss_record['smooth'][self.coef_lock_split][-1] < self.lowest_loss:
-                best_iter = True
-                self.lowest_loss = self.loss_record['smooth'][self.coef_lock_split][-1]
-                self.best_epoc = epoc
             
         if lock_coefs: self.lock_coefs()
             
