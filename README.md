@@ -37,12 +37,15 @@ My personal modular Neural Net code
 
 
 ## Design Backlog
-* Build a feature importace shuffler (shuffle columns and test error)
+* Build a feature importace shuffler, based on shuffling columns and examining change in loss
 * Build out Convolutional learner
 * Build out Recurrent/State wrapper for clusters
 * Build out a repeating sequence wrapper for clusters
 * Add Xavier option to Normal initializer
 * Dynamic L1/2 regularization
+* Build out a coefficent variance estimator - added 2019-03-19
+* Build out a constructor module to support easy feed-forward NN creation - added 2019-03-19
+* Build out a hinge regressor
 
 
 ## Known Bugs
