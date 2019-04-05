@@ -3,6 +3,12 @@ My personal modular Neural Net code
 
 ## Revision History
 
+#### 2019/04/05
+* Fixed testbeds, learning rate inputs correctly now.
+* Refactored learning modules to store coefficents as values in a dict
+* Created hinge regression learning module
+* Fixed the 'best loss' marker not showing correctly in plot_losses (was a display issue)
+
 #### 2019/03/06
 * Controller: Fixed a bug created in the resequenced learning routine, which broke best coef saving, still doesn't save -inf coefs though
 
@@ -45,8 +51,7 @@ My personal modular Neural Net code
 * Dynamic L1/2 regularization
 * Build out a coefficent variance estimator - added 2019-03-19
 * Build out a constructor module to support easy feed-forward NN creation - added 2019-03-19
-* Build out a hinge regressor
 
 
 ## Known Bugs
-* Some instances of 'best loss' do not visualize the correct iteration of 'best loss' using the plot_losses method in the controller, may also impact which coefs are saved
+* Still getting some plot_losses render bugs

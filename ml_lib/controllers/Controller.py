@@ -149,8 +149,8 @@ class Controller:
     def plot_losses(self, start_idx = 0, end_idx = None, loss_type = 'smooth', figsize = (16, 10)):
         plt.figure(figsize = figsize)
         for key, value in self.loss_record[loss_type].items():
-            plt.plot(value[start_idx:len(value) if end_idx is None else end_idx], label = key)
-        plt.axvline(self.best_epoc, c = 'r', label = 'best_epoc')
+            plt.plot(value[start_idx:len(value) if end_idx is None else start_idx:end_idx], label = key)
+        plt.axvline(self.best_epoc - start_idx, c = 'r', label = 'best_epoc')
         plt.legend()
         
     def network_coefs(self, exempt_bias = False):

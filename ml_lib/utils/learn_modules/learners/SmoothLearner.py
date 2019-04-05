@@ -18,31 +18,36 @@ class SmoothLearner(Root):
         self.alpha = self.defaults['alpha'] if alpha is None else alpha
         self.beta = self.defaults['beta'] if beta is None else beta
         self.clamper = self.defaults['clamper'] if clamper is None else clamper
-        self.gradient = None
-        self.grad_sq = None
-        self.iter_count = 1
+        self.gradient = {}
+        self.grad_sq = {}
     
     def learn(self, loss, coefs):
-        gradient = pt.autograd.grad(loss, coefs, create_graph = True)[0]
+        gradient = self.order_grads(loss, coefs)
+        coef_count = sum([coef.numel() for coef in coefs.values()])
         
+        learn_step = {}
         with pt.no_grad():
-            if self.gradient is None:
-                self.gradient = gradient
-            else:
-                self.gradient = (self.alpha * gradient) + ((1 - self.alpha) * self.gradient)
-            
-            if self.grad_sq is None:
-                self.grad_sq = gradient ** 2
-            else:
-                self.grad_sq = (self.beta * (gradient ** 2)) + ((1 - self.beta) * self.grad_sq)
-            
-            learn_step = self.gradient / pt.clamp(pt.sqrt(self.grad_sq), self.clamper, np.inf)
-            
-            if self.coef_scale: learn_step /= coefs.size()[0]
-            
-            self.iter_count += 1
-            
-        self._v_msg('Smooth updated %s coefs.' % coefs.numel())
+            for coef in gradient.keys():
+                self.gradient[coef] = (self.alpha * gradient[coef]) + ((1-self.alpha) * self.gradient.get(coef, gradient[coef]))
+                self.grad_sq[coef] = (self.beta * (gradient[coef]**2)) + ((1-self.beta) * self.grad_sq.get(coef, gradient[coef]**2))
+                learn_step[coef] = self.gradient[coef] / pt.clamp(pt.sqrt(self.grad_sq[coef]), self.clamper, np.inf)
+                if self.coef_scale: learn_step[coef] /= coef_count
+
+        #self._v_msg('Smooth updated %s coefs.' % coefs.numel())
             
         return learn_step
     
+    def order_grads(self, loss, coefs):
+        coef_names = []
+        coef_vals = []
+        for coef_name, coef_val in coefs.items():
+            coef_names.append(coef_name)
+            coef_vals.append(coef_val)
+
+        new_grad = pt.autograd.grad(loss, coef_vals, retain_graph = True)
+
+        gradients = {}
+        for coef_name, coef_grad in zip(coef_names, new_grad):
+            gradients[coef_name] = coef_grad
+
+        return gradients

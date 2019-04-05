@@ -3,14 +3,12 @@ from datetime import datetime as dt
 class RootCombine:
     defaults = {
         'path_name': 'N/A',
-        'verbose': False,
-        'bias_active': True
+        'verbose': False
     }
     
-    def __init__(self, path_name = None, verbose = None, bias_active = None):
+    def __init__(self, path_name = None, verbose = None):
         self.path_name = self.defaults['path_name'] if path_name is None else path_name
         self.verbose = self.defaults['verbose'] if verbose is None else verbose
-        self.bias_active = self.defaults['bias_active'] if bias_active is None else bias_active
         
     def _v_msg(self, message):
         if self.verbose: print('%s | %s:combiner (%s) - %s' % (
