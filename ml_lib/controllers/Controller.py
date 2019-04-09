@@ -61,6 +61,7 @@ class Controller:
             raise Exception('%s is not a valid link_type, must be either input or output.' % link_type)
             
     def enable_network(self):
+        self.best_epoc = 0
         for cluster in self.clusters.values(): cluster.enable()
         self.loss_record = {'raw': {}, 'smooth': {}}
         self.learn_rate_record = {}
@@ -91,16 +92,19 @@ class Controller:
             
     def network_learn(self, best_iter):
         network_loss = self.network_loss[self.train_split]
-        coefs = [coef for coef in self.network_coefs(True).values()]
-        reg_loss = self.Regularizer.regularize(coefs)
+        
+        reg_coefs = []
+        for coefs in self.network_coefs(True).values():
+            for coef in coefs.values():
+                reg_coefs.append(coef)
+        reg_loss = self.Regularizer.regularize(reg_coefs)
+        
         learn_loss = network_loss + reg_loss
         
         for cluster in self.clusters.values(): cluster.learn(learn_loss, best_iter = best_iter)
             
-    def train_model(self, epocs, lock_coefs = False):
+    def train_model(self, epocs, lock_coefs = True):
         t = tqdm.tnrange(epocs) if self.use_tqdm else range(epocs)
-        
-        self.best_epoc = 0
         
         for epoc in t:
             best_iter = False

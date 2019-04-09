@@ -3,8 +3,14 @@ My personal modular Neural Net code
 
 ## Revision History
 
+#### 2019/04/08
+* Fixed visualization of optimal iteration coefficents on multiple-trained controllers
+* Fixed regularization function after coefficent refactor
+* Fixed Coefficent locking after coefficent refactor
+* Changed Controller Learn lock_coefs kwarg default to True
+
 #### 2019/04/05
-* Fixed testbeds, learning rate inputs correctly now.
+* Fixed testbeds, learning rate inputs correctly now
 * Refactored learning modules to store coefficents as values in a dict
 * Created hinge regression learning module
 * Fixed the 'best loss' marker not showing correctly in plot_losses (was a display issue)
@@ -51,6 +57,7 @@ My personal modular Neural Net code
 * Dynamic L1/2 regularization
 * Build out a coefficent variance estimator - added 2019-03-19
 * Build out a constructor module to support easy feed-forward NN creation - added 2019-03-19
+* Build out a model state snapshoter - Added 2019-04-08
 
 
 ## Known Bugs

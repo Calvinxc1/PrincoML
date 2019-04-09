@@ -146,8 +146,9 @@ class DenseHingeModule(Root):
         return coefs
     
     def lock_coefs(self):
-        self.coefs = self.best_coefs.clone()
-        self.coefs.requires_grad = True
+        for coef_name, coef in self.best_coefs.items():
+            self.coefs[coef_name] = coef.clone()
+        self.activate_grad()
         
     @property
     def learn_rate(self):
