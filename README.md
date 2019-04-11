@@ -1,7 +1,21 @@
-# tf_modular_nn
-My personal modular Neural Net code
+# PrincoML
+A few years back I got frustrated with the current derth of Machine Learning libraries out there, namely TensorFlow, PyTorch and Keras. They work great using the standard methods, but I wanted to make something more configurable, where I could customize the architecture, equations, and whatnot, in a much more straightforward method. As such I made this library, PrincoML (named after a good friend of mine).
+
+PrincoML allows for a level of flexability beyond waht existing libraries provide in how a gradient-descent based machine learning solution can be architectured. It supports simple linear/logistic/GLM style regression, as well as fantastically complex neural networks, and all sorts of solutions inbetween. I've used it both on personal projects and professionally, and it's worked wonders for me. PrincoML is based on PhTorch as the backend, which is a personal preference, as I've tried both Numpy and TensorFlow impementations, and PyTorch just offers a smoother integration for the needs of the library.
+
+Development is largely based around whatever feature I need or feel like implementing. This likely means that CNN/Image Recognition stuff will take a back seat as I'm personally not fond of those approaches, and RNN/Time Series/NLP stuff will take forefront, as that's my speciality (-:
+
+I'm always welcome to accept ideas/code/etc. from other contributors, but the primary purpose of this library is to serve as my own personal machine learning code, that I just happen to share with everyone else (-: As such, enjoy, use at your leisure, and have fun with it!
+
+- Jason Cherry
+<JCherry@gmail.com>
+
 
 ## Revision History
+
+#### 2019/04/11
+* Renamed the library to PrincoML
+* Added an actual description to the readme
 
 #### 2019/04/08
 * Fixed visualization of optimal iteration coefficents on multiple-trained controllers
