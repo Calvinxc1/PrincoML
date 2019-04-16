@@ -16,6 +16,9 @@ I'm always welcome to accept ideas/code/etc. from other contributors, but the pr
 
 ## Revision History
 
+#### 2019/04/15
+* Created a missing data handler class for the data cluster
+
 #### 2019/04/12
 * Refactored directory name to match common Python naming conventions
 

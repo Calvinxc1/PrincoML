@@ -7,11 +7,13 @@ from princo_ml.utils.splitters.BaseSplit import BaseSplit
 from princo_ml.utils.batchers.FlatBatch import FlatBatch
 from princo_ml.utils.losses.SqErrLoss import SqErrLoss
 from princo_ml.utils.loss_combiners.MeanLossCombine import MeanLossCombine
+from princo_ml.utils.null_handlers.DummyNull import DummyNull
 
 class DataCluster(Root):
     defaults = {
         **Root.defaults,
         'normalizer': NormalNorm,
+        'null_handler': DummyNull,
         'splitter': BaseSplit,
         'batcher': FlatBatch,
         'loss': SqErrLoss,
@@ -20,12 +22,14 @@ class DataCluster(Root):
 
     def __init__(self, cluster_name, data_frame, path_name=None, verbose=None, reshape=None,
                  normalizer=None, normalizer_kwargs={},
+                 null_handler=None, null_handler_kwargs={},
                  splitter=None, splitter_kwargs={},
                  batcher=None, batcher_kwargs={},
                  loss=None, loss_kwargs={},
                  loss_combiner=None, loss_combiner_kwargs={}
                  ):
         normalizer = self.defaults['normalizer'] if normalizer is None else normalizer
+        null_handler = self.defaults['null_handler'] if null_handler is None else null_handler
         splitter = self.defaults['splitter'] if splitter is None else splitter
         batcher = self.defaults['batcher'] if batcher is None else batcher
         loss = self.defaults['loss'] if loss is None else loss
@@ -37,7 +41,11 @@ class DataCluster(Root):
 
         self.Normalizer = normalizer(path_name='%s:%s' % (
             self.path_name, self.name), **normalizer_kwargs)
+        self.NullHandler = null_handler(path_name='%s:%s' % (
+            self.path_name, self.name), **null_handler_kwargs)
         self.add_data(data_frame)
+        
+        
 
         self.Splitter = splitter(self.data['tensor'], path_name='%s:%s' % (
             self.path_name, self.name), **splitter_kwargs)
@@ -72,7 +80,8 @@ class DataCluster(Root):
                 '%s: Attempting to overwrite existing data_frame when overwrite is False' % self.name)
 
         normed_data = self.Normalizer.norm_data(data_frame)
-        self.data = self.convert_frame(normed_data)
+        null_handled_data = self.NullHandler.init_nulls(normed_data)
+        self.data = self.convert_frame(null_handled_data)
 
         self._v_msg('Data frame added, overwrite %s.' % overwrite)
 
@@ -88,9 +97,13 @@ class DataCluster(Root):
     def add_link(self, cluster, link_type, data_cols=None, reshape=None, **kwargs):
         if data_cols is None:
             raise Exception('data_cols kwarg cannot be empty.')
+            
+        nulled_cols = []
+        for col in data_cols:
+            nulled_cols.extend(self.NullHandler.col_mapper(col))
 
         col_idx = np.array([self.data['columns'].get_loc(col)
-                            for col in data_cols])
+                            for col in nulled_cols])
         super().add_link(cluster, link_type)
 
         self.links[link_type][-1]['params']['columns'] = col_idx
