@@ -1,8 +1,8 @@
 import torch as pt
 
-from princo_ml.utils.learn_modules.combiners.RootCombine import RootCombine as Root
+from .RootCombiner import RootCombiner as Root
 
-class HingeCombine(Root):
+class HingeCombiner(Root):
     defaults = {
         **Root.defaults,
         'hinge_func': pt.tanh

@@ -1,6 +1,6 @@
 import torch as pt
 
-from princo_ml.utils.learn_modules.learners.RootLearner import RootLearner as Root
+from .RootLearner import RootLearner as Root
 
 class MomentumLearner(Root):
     defaults = {

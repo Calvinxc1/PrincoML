@@ -1,13 +1,13 @@
 import torch as pt
 import numpy as np
 
-from princo_ml.clusters.RootCluster import RootCluster as Root
-from princo_ml.utils.normalizers.NormalNorm import NormalNorm
-from princo_ml.utils.splitters.BaseSplit import BaseSplit
-from princo_ml.utils.batchers.FlatBatch import FlatBatch
-from princo_ml.utils.losses.SqErrLoss import SqErrLoss
-from princo_ml.utils.loss_combiners.MeanLossCombine import MeanLossCombine
-from princo_ml.utils.null_handlers.DummyNull import DummyNull
+from .RootCluster import RootCluster as Root
+from ..utils.normalizers import NormalNorm
+from ..utils.splitters import BaseSplit
+from ..utils.batchers import FlatBatch
+from ..utils.losses import SqErrLoss
+from ..utils.loss_combiners import MeanLossCombiner
+from ..utils.null_handlers import DummyNull
 
 class DataCluster(Root):
     defaults = {
@@ -17,7 +17,7 @@ class DataCluster(Root):
         'splitter': BaseSplit,
         'batcher': FlatBatch,
         'loss': SqErrLoss,
-        'loss_combiner': MeanLossCombine,
+        'loss_combiner': MeanLossCombiner,
     }
 
     def __init__(self, cluster_name, data_frame, path_name=None, verbose=None, reshape=None,

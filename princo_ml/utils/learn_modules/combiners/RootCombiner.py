@@ -1,6 +1,6 @@
 from datetime import datetime as dt
 
-class RootCombine:
+class RootCombiner:
     defaults = {
         'path_name': 'N/A',
         'verbose': False

@@ -1,15 +1,15 @@
 import torch as pt
 from copy import deepcopy as copy
 
-from princo_ml.utils.learn_modules.RootModule import RootModule as Root
-from princo_ml.utils.initialisers.FlatInit import FlatInit
-from princo_ml.utils.initialisers.NormalInit import NormalInit
-from princo_ml.utils.initialisers.HingeInit import HingeInit
-from princo_ml.utils.learn_modules.combiners.HingeCombine import HingeCombine
-from princo_ml.utils.learn_modules.activators.LinearActivate import LinearActivate
-from princo_ml.utils.learn_modules.learners.GradientLearner import GradientLearner
-from princo_ml.utils.learn_modules.learn_rates.FlatLearnRate import FlatLearnRate
-from princo_ml.utils.learn_modules.learn_noise.RootLearnNoise import RootLearnNoise
+from .RootModule import RootModule as Root
+from ..initialisers import FlatInit
+from ..initialisers import NormalInit
+from ..initialisers import HingeInit
+from .combiners import HingeCombiner
+from .activators import LinearActivator
+from .learners import GradientLearner
+from .learn_rates import FlatLearnRate
+from .learn_noise.RootLearnNoise import RootLearnNoise
 
 class DenseHingeModule(Root):
     name = 'dense_hinge_module'
@@ -21,8 +21,8 @@ class DenseHingeModule(Root):
         'hinge_init': HingeInit,
         'bias_init': FlatInit,
         'weight_init': NormalInit,
-        'combiner': HingeCombine,
-        'activator': LinearActivate,
+        'combiner': HingeCombiner,
+        'activator': LinearActivator,
         'learner': GradientLearner,
         'nesterov': False
     }

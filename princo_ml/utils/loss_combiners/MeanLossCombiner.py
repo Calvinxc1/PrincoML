@@ -1,6 +1,6 @@
-from princo_ml.utils.loss_combiners.RootLossCombine import RootLossCombine as Root
+from .RootLossCombiner import RootLossCombiner as Root
 
-class MeanLossCombine(Root):
+class MeanLossCombiner(Root):
     def loss_combine(self, loss_tensor):
         combined_loss = loss_tensor.mean()
         

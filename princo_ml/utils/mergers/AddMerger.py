@@ -1,4 +1,4 @@
-from princo_ml.utils.mergers.RootMerger import RootMerger as Root
+from .RootMerger import RootMerger as Root
 
 class AddMerger(Root):
     defaults = {

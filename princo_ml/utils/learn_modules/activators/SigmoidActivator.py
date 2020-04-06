@@ -1,8 +1,8 @@
 import torch as pt
 
-from princo_ml.utils.learn_modules.activators.RootActivate import RootActivate as Root
+from .RootActivator import RootActivator as Root
 
-class SigmoidActivate(Root):
+class SigmoidActivator(Root):
     def activate(self, input_tensor):
         activated_tensor = pt.sigmoid(input_tensor)
         self._v_msg('Sigmoid Activation on %s shape tensor' % (tuple([dim for dim in activated_tensor.size()]),))

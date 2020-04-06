@@ -1,6 +1,6 @@
 from datetime import datetime as dt
 
-class RootActivate:
+class RootLossCombiner:
     defaults = {
         'path_name': 'N/A',
         'verbose': False
@@ -11,13 +11,13 @@ class RootActivate:
         self.verbose = self.defaults['verbose'] if verbose is None else verbose
         
     def _v_msg(self, message):
-        if self.verbose: print('%s | %s:activator (%s) - %s' % (
+        if self.verbose: print('%s | %s:loss (%s) - %s' % (
             dt.utcnow().isoformat(sep = ' '),
             self.path_name,
             type(self).__name__,
             message
         ))
-            
-    def activate(self, input_tensor):
+        
+    def loss_combine(self, loss_tensor):
         ## Define in child classes
         pass

@@ -1,7 +1,7 @@
 import numpy as np
 from datetime import datetime as dt
 
-from princo_ml.utils.splitters.RootSplit import RootSplit as Root
+from .RootSplit import RootSplit as Root
 
 class BaseSplit(Root):
     defaults = {
