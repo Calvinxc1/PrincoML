@@ -160,7 +160,10 @@ class DataCluster(Root):
     def target_tensor(self):
         link_cols = np.concatenate(
             [link['params']['columns'] for link in self.links['input']])
-        target_tensor = self.data['tensor'][:, link_cols]
+        if self.manual_data is None:
+            target_tensor = self.data['tensor'][:, link_cols]
+        else:
+            target_tensor = self.manual_data['tensor'][:, link_cols]
         return target_tensor
 
     @property
@@ -174,8 +177,10 @@ class DataCluster(Root):
             if self.manual_data is None:
                 splits = self.batch_splits
             else:
-                splits = [{'name': 'all', 'index': np.arange(
-                    predict_tensor.size()[0])}]
+                splits = [{
+                    'name': 'all',
+                    'index': np.arange(predict_tensor.size()[0])
+                }]
 
             for batch_split in splits:
                 self._v_msg('Building loss for %s.' % batch_split['name'])
