@@ -1,6 +1,6 @@
 import torch as pt
 
-from princo_ml.utils.regularizers.RootRegularizer import RootRegularizer as Root
+from .RootRegularizer import RootRegularizer as Root
 
 class NormRegularizer(Root):
     defaults = {

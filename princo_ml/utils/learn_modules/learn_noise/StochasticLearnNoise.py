@@ -1,7 +1,7 @@
 import torch as pt
 import numpy as np
 
-from princo_ml.utils.learn_modules.learn_noise.RootLearnNoise import RootLearnNoise as Root
+from .RootLearnNoise import RootLearnNoise as Root
 
 class StochasticLearnNoise(Root):
     defaults = {

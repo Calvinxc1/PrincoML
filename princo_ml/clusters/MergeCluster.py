@@ -1,14 +1,14 @@
 import torch as pt
 
-from princo_ml.clusters.RootCluster import RootCluster as Root
-from princo_ml.utils.mergers.AddMerger import AddMerger
-from princo_ml.utils.learn_modules.activators.LinearActivate import LinearActivate
+from .RootCluster import RootCluster as Root
+from ..utils.mergers import AddMerger
+from ..utils.learn_modules.activators import LinearActivator
 
 class MergeCluster(Root):
     defaults = {
         **Root.defaults,
         'merger': AddMerger, 'merger_kwargs': {},
-        'activator': LinearActivate, 'activator_kwargs': {}
+        'activator': LinearActivator, 'activator_kwargs': {}
     }
 
     def __init__(self, cluster_name, path_name=None, verbose=None, reshape=None,

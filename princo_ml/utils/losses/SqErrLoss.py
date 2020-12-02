@@ -1,6 +1,6 @@
 import torch as pt
 
-from princo_ml.utils.losses.RootLoss import RootLoss as Root
+from .RootLoss import RootLoss as Root
 
 class SqErrLoss(Root):
     defaults = {

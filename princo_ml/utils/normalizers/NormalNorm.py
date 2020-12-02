@@ -1,4 +1,4 @@
-from princo_ml.utils.normalizers.RootNorm import RootNorm as Root
+from .RootNorm import RootNorm as Root
 
 class NormalNorm(Root):
     def __init__(self, path_name = None, verbose = None, ignore_cols = None):

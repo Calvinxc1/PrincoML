@@ -1,6 +1,6 @@
 import torch as pt
 
-from princo_ml.utils.learn_modules.learners.RootLearner import RootLearner as Root
+from .RootLearner import RootLearner as Root
 
 class GradientLearner(Root):
     def learn(self, loss, coefs):
