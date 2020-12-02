@@ -1,6 +1,6 @@
 import pandas as pd
 
-from princo_ml.utils.null_handlers.RootNull import RootNull as Root
+from .RootNull import RootNull as Root
 
 class DummyNull(Root):
     def init_nulls(self, dataframe):

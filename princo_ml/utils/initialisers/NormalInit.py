@@ -1,7 +1,7 @@
 import numpy as np
 import torch as pt
 
-from princo_ml.utils.initialisers.RootInit import RootInit as Root
+from .RootInit import RootInit as Root
 
 class NormalInit(Root):
     defaults = {

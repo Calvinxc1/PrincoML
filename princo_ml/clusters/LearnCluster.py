@@ -1,5 +1,5 @@
-from princo_ml.clusters.RootCluster import RootCluster as Root
-from princo_ml.utils.learn_modules.DenseModule import DenseModule
+from .RootCluster import RootCluster as Root
+from ..utils.learn_modules import DenseModule
 
 class LearnCluster(Root):
     defaults = {

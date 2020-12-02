@@ -1,6 +1,6 @@
 import numpy as np
 
-from princo_ml.utils.batchers.RootBatch import RootBatch as Root
+from .RootBatch import RootBatch as Root
 
 class FlatBatch(Root):
     defaults = {

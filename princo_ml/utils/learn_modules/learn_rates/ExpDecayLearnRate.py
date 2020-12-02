@@ -1,6 +1,6 @@
 import numpy as np
 
-from princo_ml.utils.learn_modules.learn_rates.RootLearnRate import RootLearnRate as Root
+from .RootLearnRate import RootLearnRate as Root
 
 class ExpDecayLearnRate(Root):
     defaults = {

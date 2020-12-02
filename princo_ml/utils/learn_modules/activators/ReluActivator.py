@@ -1,7 +1,7 @@
 import numpy as np
 import torch as pt
 
-from princo_ml.utils.learn_modules.activators.RootActivate import RootActivate as Root
+from .RootActivator import RootActivator as Root
 
 class ReluActivator(Root):
     defaults = {

@@ -1,7 +1,7 @@
 import numpy as np
 import torch as pt
 
-from princo_ml.utils.mergers.RootMerger import RootMerger as Root
+from .RootMerger import RootMerger as Root
 
 class SurvivalMerger(Root):
     defaults = {

@@ -4,14 +4,14 @@ import torch as pt
 import tqdm
 import matplotlib.pyplot as plt
 
-from princo_ml.utils.loss_combiners.MeanLossCombine import MeanLossCombine
-from princo_ml.utils.regularizers.NormRegularizer import NormRegularizer
+from ..utils.loss_combiners import MeanLossCombiner
+from ..utils.regularizers import NormRegularizer
 
 class Controller:
     defaults = {
         'train_split': 'train', 'coef_lock_split': 'holdout',
         'use_tqdm': True,
-        'loss_combiner': MeanLossCombine, 'loss_combiner_kwargs': {},
+        'loss_combiner': MeanLossCombiner, 'loss_combiner_kwargs': {},
         'regularizer': NormRegularizer, 'regularizer_kwargs': {'l1': 0, 'l2': 0},
         'loss_smooth_coefs': np.array([0.9, 10])
     }

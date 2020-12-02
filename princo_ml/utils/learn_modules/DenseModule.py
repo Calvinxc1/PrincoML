@@ -1,14 +1,14 @@
 import torch as pt
 from copy import deepcopy as copy
 
-from princo_ml.utils.learn_modules.RootModule import RootModule as Root
-from princo_ml.utils.initialisers.FlatInit import FlatInit
-from princo_ml.utils.initialisers.NormalInit import NormalInit
-from princo_ml.utils.learn_modules.combiners.SimpleCombine import SimpleCombine
-from princo_ml.utils.learn_modules.activators.LinearActivate import LinearActivate
-from princo_ml.utils.learn_modules.learners.GradientLearner import GradientLearner
-from princo_ml.utils.learn_modules.learn_rates.FlatLearnRate import FlatLearnRate
-from princo_ml.utils.learn_modules.learn_noise.RootLearnNoise import RootLearnNoise
+from .RootModule import RootModule as Root
+from ..initialisers import FlatInit
+from ..initialisers import NormalInit
+from .combiners import SimpleCombiner
+from .activators import LinearActivator
+from .learners import GradientLearner
+from .learn_rates import FlatLearnRate
+from .learn_noise.RootLearnNoise import RootLearnNoise
 
 class DenseModule(Root):
     name = 'dense_module'
@@ -19,8 +19,8 @@ class DenseModule(Root):
         'learn_noise': RootLearnNoise,
         'bias_init': FlatInit,
         'weight_init': NormalInit,
-        'combiner': SimpleCombine,
-        'activator': LinearActivate,
+        'combiner': SimpleCombiner,
+        'activator': LinearActivator,
         'learner': GradientLearner,
         'nesterov': False
     }
