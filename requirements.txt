@@ -3,7 +3,7 @@ cffi==1.14.0
 cycler==0.10.0
 kiwisolver==1.2.0
 matplotlib==3.2.1
-numpy==1.18.1
+numpy==1.22.0
 olefile==0.46
 pandas==1.0.3
 Pillow==7.0.0
