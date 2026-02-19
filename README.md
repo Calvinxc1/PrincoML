@@ -1,21 +1,56 @@
-# PrincoML
-A few years back I got frustrated with the current derth of Machine Learning libraries out there, namely TensorFlow, PyTorch and Keras. They work great using the standard methods, but I wanted to make something more configurable, where I could customize the architecture, equations, and whatnot, in a much more straightforward method. As such I made this library, PrincoML (named after a good friend of mine).
+# PrincoML (Archived)
 
-This is a fantastic library if you're wanting to experiment with novel gradient-based approaches to supervised learning. This is a horrible library to use if you want an easy-to-use out-of-the-box approach to machie learning.
+PrincoML is a personal research/engineering machine-learning framework I built to experiment with custom gradient-based supervised learning architectures.
 
-PrincoML allows for a level of flexability beyond what existing libraries provide in how a gradient-descent based machine learning solution can be architectured. It supports simple linear/logistic/GLM style regression, as well as fantastically complex neural networks, and all sorts of solutions inbetween. I've used it both on personal projects and professionally, and it's worked wonders for me. PrincoML is based on PyTorch as the backend, which is a personal preference, as I've tried both Numpy and TensorFlow impementations, and PyTorch just offers a smoother integration for the needs of the library.
+This repository is now archived as a historical artifact.
 
-Development is largely based around whatever feature I need or feel like implementing. This likely means that CNN/Image Recognition stuff will take a back seat as I'm personally not fond of those approaches, and RNN/Time Series/NLP stuff will take forefront, as that's my speciality (-:
+## Archive Status
+- `Maintenance`: No active development, no planned feature work, and no support.
+- `Ecosystem relevance`: Not aligned with the current Python/ML tooling ecosystem anymore.
+- `Compatibility`: Modern environments may break without manual dependency pinning and code updates.
+- `Intended use`: Reference material for past experiments, not a recommended foundation for new projects.
 
-I'm always welcome to accept ideas/code/etc. from other contributors, but the primary purpose of this library is to serve as my own personal machine learning code, that I just happen to share with everyone else (-: As such, enjoy, use at your leisure, and have fun with it!
+## Project Background
+A few years ago I wanted more direct control over model architecture, equations, and training behavior than I felt was convenient in mainstream frameworks at the time. PrincoML was built to prioritize configurability for experimentation rather than ease-of-use.
 
-- Jason Cherry
+It was used for internal experimentation across regression and neural-network style workflows, with a strong emphasis on custom training behavior.
 
-<JCherry@gmail.com>
+## What This Repo Contains
+- Core package code in `princo_ml/`
+- Historical experiment notebooks (`*_testbed.ipynb`)
+- Legacy release notes in `release_notes.md`
 
+## Example Notebooks
+These notebooks show historical examples of how the library was used:
+- [`classify_testbed.ipynb`](./classify_testbed.ipynb)
+- [`regression_testbed.ipynb`](./regression_testbed.ipynb)
+- [`cnn_testbed.ipynb`](./cnn_testbed.ipynb)
+- [`state_network_testbed.ipynb`](./state_network_testbed.ipynb)
 
-# Installation
-PrincoML is available through pip: `pip install princoml`.
+## Installation (Legacy)
+The package is available on PyPI as `princoml`: <https://pypi.org/project/princoml/?>  
+This repository should still be treated as legacy code.
 
-# Release Notes
-Release notes/history is available here: [`release_notes.md`](./release_notes.md).
+If you still need to reproduce prior work, use an isolated environment and pin dependencies carefully:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pip install -e .
+```
+
+## Important Caveats
+- APIs and patterns here predate many current best practices.
+- No guarantees are made around correctness in modern runtime/library combinations.
+- Notebook outputs and workflows may require environment-specific fixes.
+
+## For New Work
+For current projects, use actively maintained ML frameworks and ecosystem tooling.
+
+## Release Notes
+Historical release notes are available at [`release_notes.md`](./release_notes.md).
+
+## Author
+Jason Cherry  
+`JCherry@gmail.com`
